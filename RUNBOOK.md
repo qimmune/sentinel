@@ -7,24 +7,34 @@
 - ✅ `vite.config.ts` patched to expose `DEEPGRAM_` env vars
 - ✅ `SPEC.md` (project + clinical logic + pitch) and `app/CLAUDE.md` (build contract)
 
-## Tonight, before bed — 20 minutes, do these yourself
+## Also done — pulled from your Drive (`MedPlum x YC`)
+- ✅ **Deepgram API key** found and written to `app/.env` (verified git-ignored)
+- ✅ **Medplum Project ID** `2fb68983-…` written to `app/.env`
+- ✅ **CRS:ICANS.pdf** turned out to be the actual **Lee 2019 ASTCT consensus
+  paper**. I verified my grading tables against it and found two errors worth
+  fixing — SPEC.md §3 is now corrected and cites it. Full text saved offline to
+  `reference/` so it works without venue wifi.
 
-These need *your* logins, so I couldn't do them:
+## Tonight, before bed — 10 minutes
 
-1. **Medplum** — sign in at https://app.medplum.com. Create a project.
-   Go to **Project Admin → Clients**, create a client, copy the **Client ID**.
-   Add `http://localhost:3000` as an allowed redirect URI.
-2. **Deepgram** — sign up at https://console.deepgram.com, create an API key.
-   ($200 free credit; the hackathon offers more.)
-3. Put both in `~/qimmune-hackathon/app/.env`:
+**One thing still missing.** The `2fb68983-…` you pasted is your Medplum
+**Project ID**, which is not the same as a **Client ID** — the app needs the
+latter to sign in:
+
+1. https://app.medplum.com → **Project Admin → Clients** → **New Client**
+2. Name it `Sentinel`, set redirect URI to `http://localhost:3000`
+3. Copy the **Client ID** into `MEDPLUM_CLIENT_ID` in `~/qimmune-hackathon/app/.env`
+4. Verify it works end to end:
+   ```bash
+   cd ~/qimmune-hackathon/app && npm run dev
    ```
-   MEDPLUM_BASE_URL=https://api.medplum.com/
-   MEDPLUM_CLIENT_ID=<paste>
-   DEEPGRAM_API_KEY=<paste>
-   ```
-4. **Read SPEC.md §3 (clinical logic) and §8 (demo script).** You are the
+   Open http://localhost:3000 and confirm you can actually sign in. **Do this
+   tonight** — an auth problem discovered at 10am costs you the morning.
+
+Then:
+5. **Read SPEC.md §3 (clinical logic) and §8 (demo script).** You are the
    domain expert on this team — that's your edge, not the code.
-5. Charge laptop. Pack charger, **headphones with a mic** (you're demoing
+6. Charge laptop. Pack charger, **headphones with a mic** (you're demoing
    voice in a loud room — this matters more than it sounds), phone.
 
 ## Morning-of

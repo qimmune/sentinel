@@ -45,33 +45,76 @@ the future our own therapeutics require.
 
 ## 3. Clinical logic (this is the moat — get it right)
 
-### ASTCT CRS grading
-Grading is driven by fever plus hypotension and hypoxia. Fever (≥38.0 °C) is
-required for grade 1; higher grades are set by the *worse* of the hypotension
-or hypoxia column.
+**Source of truth:** Lee DW et al., *ASTCT Consensus Grading for Cytokine
+Release Syndrome and Neurologic Toxicity Associated with Immune Effector
+Cells*, Biol Blood Marrow Transplant 2019;25:625–638. The PDF is in the
+Drive folder (`MedPlum x YC/CRS:ICANS.pdf`). Tables 4, 5, 6 are transcribed
+below verbatim-accurate — **build the grader from these, not from memory.**
+
+### ASTCT CRS grading (Table 4)
+Fever (≥38.0 °C, not attributable to another cause) is required for grade 1.
+Grade is then set by **the more severe of hypotension or hypoxia**.
 
 | Grade | Fever | Hypotension | Hypoxia |
 |---|---|---|---|
 | 1 | ≥38 °C | none | none |
-| 2 | ≥38 °C | responds to fluids, no pressors | low-flow O₂ ≤6 L/min |
-| 3 | ≥38 °C | one vasopressor | high-flow O₂ >6 L/min |
-| 4 | ≥38 °C | multiple vasopressors | positive pressure ventilation |
+| 2 | ≥38 °C | not requiring vasopressors | low-flow nasal cannula (≤6 L/min) or blow-by |
+| 3 | ≥38 °C | requiring **one** vasopressor (± vasopressin) | high-flow cannula (>6 L/min), facemask, nonrebreather, Venturi |
+| 4 | ≥38 °C | requiring **multiple** vasopressors (*excluding* vasopressin) | positive pressure — CPAP, BiPAP, intubation |
+
+> **The nuance that makes this grader clinically real — and it matters most in
+> exactly our setting:** *"In patients who have CRS then receive antipyretic or
+> anticytokine therapy such as tocilizumab or steroids, fever is no longer
+> required to grade subsequent CRS severity. In this case, CRS grading is
+> driven by hypotension and/or hypoxia."*
+>
+> Outpatients take Tylenol at home. A naive grader that requires fever will
+> **silently downgrade a patient who just took an antipyretic** — the exact
+> patient you most need to catch. So `gradeCRS()` must take a
+> `antipyreticOrTociWithin6h` flag and skip the fever gate when it's set.
+>
+> This is a genuine safety bug that most teams would ship. Call it out on
+> stage — it's concrete proof you understand the clinical setting, not just
+> the table.
+
+Organ toxicities may be graded by CTCAE v5.0 but **do not** influence CRS grade.
 
 At home we can observe fever, BP, SpO₂, HR. Pressors/ventilation are inpatient
 concepts — so **Sentinel's job is detecting the grade 1 → grade 2 transition
 early**, which is exactly the decision point for outpatient tocilizumab vs.
 admission. Say this out loud in the demo; it shows you understand the setting.
 
-### ICE score (ICANS) — 10 points
+### ICE score (Table 5) — 10 points
 - **Orientation** — year, month, city, hospital → 4 pts
-- **Naming** — name 3 objects → 3 pts
+- **Naming** — name 3 objects (e.g. point to clock, pen, button) → 3 pts
 - **Following commands** — e.g. "show me 2 fingers" → 1 pt
-- **Writing** — write a standard sentence → 1 pt
+- **Writing** — write a standard sentence ("Our national bird is the bald eagle") → 1 pt
 - **Attention** — count backward from 100 by 10 → 1 pt
 
-Grade: ICE 7–9 = **1** · 3–6 = **2** · 0–2 = **3** · 0 and unarousable = **4**
-(higher grades also driven by seizure, motor findings, depressed consciousness,
-cerebral edema).
+Scoring: **10** = no impairment · **7–9** = grade 1 · **3–6** = grade 2 ·
+**0–2** = grade 3 · **0 and unarousable** = grade 4.
+
+### ICANS grading (Table 6) — ICE is only one of five domains
+
+**The ICANS grade is the MAXIMUM across five domains, not the ICE score alone.**
+A patient with ICE 3 (would be grade 2) who has a generalized seizure is
+**grade 3**. Getting this wrong is the most likely clinical bug in the build.
+
+| Domain | G1 | G2 | G3 | G4 |
+|---|---|---|---|---|
+| ICE score | 7–9 | 3–6 | 0–2 | 0 + unarousable |
+| Depressed consciousness | wakes spontaneously | wakes to voice | wakes only to tactile | unarousable / stupor / coma |
+| Seizure | — | — | any clinical seizure that resolves rapidly, or NCS resolving with intervention | prolonged (>5 min) or repetitive without return to baseline |
+| Motor findings | — | — | — | deep focal weakness (hemi-/paraparesis) |
+| Elevated ICP / edema | — | — | focal edema on imaging | diffuse edema, posturing, CN VI palsy, papilledema, Cushing's triad |
+
+So the signature is `gradeICANS(iceScore, { consciousness, seizure, motor, icp })`
+returning the max. At home we can realistically observe **ICE**, **level of
+consciousness**, and a caregiver-reported **seizure** flag — which is enough to
+reach grade 3. Tremors/myoclonus do **not** influence ICANS grade.
+
+Edge case worth encoding: ICE 0 is grade **3** if the patient is awake with
+global aphasia, but grade **4** if unarousable.
 
 **Honest limitation to name on stage:** the *writing* item can't be scored by
 voice. Sentinel captures it on-screen (finger/stylus) and scores the other 9
@@ -83,17 +126,75 @@ called them.
 
 ---
 
+## 3b. Wearables — passive sensing as the *trigger*, not the grader
+
+**Be precise about this or a clinician judge will take it apart.** Match what a
+watch actually measures against what ASTCT grading actually needs:
+
+| ASTCT needs | Apple Watch | Verdict |
+|---|---|---|
+| Temp ≥38 °C (core) | wrist temp — *overnight only*, reported as **deviation from personal baseline**, not core °C | ⚠️ trend signal only, **cannot** satisfy the fever criterion |
+| Hypotension | **no blood pressure at all** | ❌ needs a paired BP cuff |
+| Hypoxia / SpO₂ | blood oxygen (spot + background) | ✅ usable |
+| — | HR, HRV, respiratory rate | ✅ strong early-warning signals; not in the grading table |
+
+So the honest and *stronger* framing is:
+
+> **The watch doesn't grade. The watch decides when to ask.**
+
+Passive signals (rising resting HR, falling HRV, elevated wrist-temp deviation,
+rising respiratory rate) are exactly the physiology that moves *hours before* a
+patient feels sick enough to report — but none of them are gradeable criteria.
+So they trigger the active assessment that produces gradeable data:
+
+```
+passive wearable drift  →  agent initiates voice check-in early
+                        →  ICE score (ICANS) + "take your temp and BP now"
+                        →  deterministic ASTCT grade on real criteria
+                        →  escalate with the full trail
+```
+
+This is a **better** agentic story than a fixed daily check-in: the agent
+decides *when* to intervene based on continuous data, rather than waiting for a
+scheduled slot. It also closes the honest gap in the pitch — resting HR climbing
+at 2am is precisely the signal a once-daily nurse call misses.
+
+**How to demo it in one day.** HealthKit needs a native iOS app + a real device
+(it doesn't work meaningfully in the simulator) — that is a bad trade for a
+hackathon. Two viable paths, in order of preference:
+
+1. **Simulated wearable feed** *(recommended)* — a scripted time series
+   replaying a real deterioration curve into FHIR Observations. Label it
+   "simulated" in the UI. Judges accept this without blinking; nobody expects a
+   device integration in 8 hours.
+2. **Apple Health export** *(nice bonus, ~30 min)* — on your iPhone, Health app
+   → profile → Export All Health Data → `export.xml`. Parse it and seed real
+   HR/HRV/respiratory-rate history for one patient. No native app required, and
+   "this is my actual watch data" is a genuinely good line on stage.
+
+Do #2 tonight if you have 10 minutes — start the export before bed, it's slow.
+
+Both land in FHIR the same way, so the app can't tell the difference:
+resting HR `40443-4` · HRV SDNN `80404-7` · respiratory rate `9279-1` ·
+body temp delta `8310-5` (use a `Component` for baseline deviation) · SpO₂ `59408-5`.
+
 ## 4. Architecture
 
 ```
-Patient PWA (phone)                  Clinician dashboard
-  ├── daily voice check-in             ├── cohort triage board
-  │     └── Deepgram STT ──┐           │     (green / amber / red)
-  └── vitals entry          │          └── patient drill-down:
-        (or simulated       │                vitals trend, ICE trend,
-         wearable feed)     │                escalation timeline
-             │              │
-             ▼              ▼
+Wearable feed (simulated /            Clinician dashboard
+  Apple Health export)                  ├── cohort triage board
+  HR · HRV · resp rate · SpO2           │     (green / amber / red)
+  · wrist temp deviation                └── patient drill-down:
+             │                                wearable + vitals trends,
+             │  drift detected                ICE trend, escalation
+             ▼  → agent initiates             timeline
+Patient PWA (phone)                             ▲
+  ├── voice check-in (ICE) ─┐                   │
+  │     └── Deepgram STT    │                   │
+  └── prompted temp + BP    │                   │
+        entry               │                   │
+             │              │                   │
+             ▼              ▼                   │
       ┌────────────────────────────────┐
       │      Medplum (hosted FHIR)     │
       │  Patient · Observation         │
@@ -150,14 +251,24 @@ independently demoable.
    answers aloud, transcript → structured scoring → QuestionnaireResponse.
 6. ICE → ICANS grade, plotted as a trend.
 
+### Tier 2b — wearable feed, ~30 min (do it right after Tier 2)
+6b. Simulated wearable time series (HR, HRV, resp rate, SpO₂, wrist-temp
+    deviation) streaming into FHIR Observations, plotted on the patient
+    drill-down. Cheap to build, and it's what makes the escalation *look*
+    continuous rather than form-driven. See §3b.
+
 ### Tier 3 — the "agentic" proof, by ~4:00pm
 7. Medplum Bot + Subscription: fires on every new Observation/QuestionnaireResponse,
    recomputes both grades, writes RiskAssessment, raises Flag + Task on threshold crossing.
-8. Escalation timeline on the patient drill-down.
+8. **Wearable drift → agent initiates an off-schedule check-in.** This is the
+   money feature: the Bot sees resting HR climbing + HRV falling, and *triggers
+   the voice assessment on its own* rather than waiting for tomorrow's slot.
+   That's the difference between a form and an agent — build this before #9.
+9. Escalation timeline on the patient drill-down.
 
 ### Tier 4 — only if time remains
-9. Trend-based early warning (grade 1 + rising temp slope + falling ICE = amber).
 10. Draft escalation note for the care team, LLM-generated from the structured data.
+11. Apple Health export parser to seed one patient with your real watch data.
 
 ### Explicitly NOT doing
 Auth beyond Medplum's built-in · real wearable integrations · Stedi/claims ·
@@ -228,14 +339,26 @@ understand*, not what you built.
 >
 > Her nurse sees this. *[cohort board — five patients, all green]*
 >
-> Now it's day 7. *[advance]* Her temp is 38.4. Her ICE score came back 7, down
-> from 10. Neither of those alone triggers a call. Together, Sentinel grades her
-> CRS 1, ICANS 1, flags the downward trend, and pages the on-call team — with
-> the vitals, the transcript, and the grading rationale attached.
-> *[escalation appears on the board, Maria goes amber]*
+> Now it's 2am on day 7. Maria is asleep. *[wearable chart]* Her resting heart
+> rate has climbed 18 beats over six hours and her HRV is falling. That's not a
+> diagnosis — a watch can't grade CRS, it has no blood pressure and it can't
+> read a core temperature. But it's enough to know something is changing.
+>
+> So Sentinel doesn't wait for tomorrow morning. *[agent triggers check-in]* It
+> calls her. Her ICE score comes back 7, down from 10. It asks her to take her
+> temperature: 38.4.
+>
+> *Now* it has gradeable data. CRS grade 1, ICANS grade 1 — and it pages the
+> on-call team with the vitals, the transcript, and the grading rationale
+> attached. *[escalation appears, Maria goes amber]*
+>
+> Note what happened: the watch decided *when* to ask. The exam produced the
+> criteria. The grading is deterministic ASTCT logic — we don't let a language
+> model decide if you have grade 3 CRS.
 >
 > That's a patient who gets tocilizumab this afternoon instead of an ICU bed
-> tomorrow.
+> tomorrow. In a published series, catching CRS that early kept 15 of 35
+> patients out of the hospital entirely.
 >
 > We're Q-Immune. We build safer immunotherapies. Safer products are what let
 > CAR-T leave the hospital — and this is the layer that has to exist when it

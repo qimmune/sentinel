@@ -19,11 +19,21 @@ Deepgram (voice). One-day hackathon build, Aug 1 2026, deadline 5:00pm.
 
 1. **Clinical grading is deterministic TypeScript. Never an LLM call.**
    Put it in `src/clinical/` as pure functions with no I/O:
-   - `gradeCRS(vitals): 0|1|2|3|4`
+   - `gradeCRS(vitals, { antipyreticOrTociWithin6h }): 0|1|2|3|4`
    - `scoreICE(answers): number` (0–10)
-   - `gradeICANS(iceScore, flags): 0|1|2|3|4`
+   - `gradeICANS(iceScore, { consciousness, seizure, motor, icp }): 0|1|2|3|4`
    These must be unit-testable and have zero React/Medplum imports. The LLM
    only turns speech into structured answers.
+
+   **Build these from SPEC.md §3, which is transcribed from the actual ASTCT
+   consensus paper (full text in `../reference/`). Do not grade from memory.**
+   Two rules that are easy to get wrong and are both encoded in §3:
+   - CRS: fever is **not** required once the patient has had an antipyretic or
+     tocilizumab — grade on hypotension/hypoxia alone. Outpatients take Tylenol,
+     so a fever-gated grader silently misses the patients that matter most.
+   - ICANS: the grade is the **max across five domains**, not the ICE score alone.
+
+   Write the unit tests for both of these edge cases first.
 
 2. **Everything persists as real FHIR.** No app-specific database, no
    localStorage as source of truth. Observations for vitals,
@@ -67,6 +77,28 @@ src/
 The cloned starter's demo pages under `src/pages/` are scaffolding — replace
 freely, but keep `SignInPage.tsx` and the `MedplumProvider` setup in
 `src/main.tsx` / `src/App.tsx`.
+
+## Reference implementations — copy, don't invent
+
+The full Medplum monorepo is cloned and symlinked at `./medplum-link`
+(→ `../medplum-src`). This is Medplum's own #1 recommendation for AI-assisted
+builds: read their real source instead of relying on generic FHIR knowledge.
+**Before writing anything non-trivial, look for the pattern here first.**
+
+Directly relevant to our tiers:
+
+| Need | Look at |
+|---|---|
+| Tier 2 — ICE questionnaire UI + scoring hooks | `medplum-link/examples/medplum-questionnaire-hooks` |
+| Tier 3 — the grading Bot | `medplum-link/examples/medplum-demo-bots` |
+| Tier 3 — Subscriptions firing on new data | `medplum-link/examples/medplum-websocket-subscriptions-demo` |
+| Tier 3 — escalation Tasks | `medplum-link/examples/medplum-task-demo` |
+| General clinical workflow / dashboard patterns | `medplum-link/examples/medplum-provider` |
+| Docs source | `medplum-link/packages/docs` |
+
+Note their guide's own warning: agents "hallucinate fields, mix FHIR versions,
+and produce plausible-but-wrong code." Check generated FHIR against
+`@medplum/fhirtypes` — if it type-checks, the resource shape is probably right.
 
 ## Known gotchas
 - The ICE **writing** item cannot be scored by voice. Capture it on-screen.
