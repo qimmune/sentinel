@@ -269,11 +269,32 @@ independently demoable.
 ### Tier 4 — only if time remains
 10. Draft escalation note for the care team, LLM-generated from the structured data.
 11. Apple Health export parser to seed one patient with your real watch data.
+12. **Stedi eligibility check — the business-model slide.** Only if Tier 3 is done.
+
+    Stedi is a clearinghouse: eligibility (270/271), claims, claim status. It has
+    nothing to do with CRS/ICANS, so it's not on the critical path — and there
+    are **zero Stedi judges** on the 6-person panel. But there's one angle that
+    earns its 20 minutes: **"is this patient covered for remote monitoring?"**
+
+    RPM has real billing codes (CPT 99453 setup / 99454 device supply /
+    99457 first 20 min of management). Running an eligibility check at enrollment
+    turns the pitch from "nice clinical tool" into "here's who pays." The whole
+    outpatient CAR-T thesis is economic, so this is the piece that makes the
+    money argument concrete — a **Diana Hu** point, not a clinical one.
+
+    Setup: portal.stedi.com → API Keys → Generate, type **Test**, name prefixed
+    `test`. Sandbox accounts are test-mode-only, which is all we need. Mock
+    payers: Aetna, Cigna, UHC, CMS. Free, no PHI. Endpoint and sample payload
+    are in the Drive doc "# Developer Docs Stedi". Skip their MCP server — it
+    needs a production account; just call the REST API.
+
+    Their docs pitch the MCP server for "voice agents that need to verify
+    benefits in real time" — same stack as ours, if you want the sponsor nod.
 
 ### Explicitly NOT doing
-Auth beyond Medplum's built-in · real wearable integrations · Stedi/claims ·
-mobile native · multi-tenancy · anything HIPAA-real. Say "synthetic data only"
-once and move on.
+Auth beyond Medplum's built-in · real wearable/HealthKit integrations · claims
+submission · mobile native · multi-tenancy · anything HIPAA-real. Say "synthetic
+data only" once and move on.
 
 ---
 
