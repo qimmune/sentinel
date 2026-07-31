@@ -17,19 +17,33 @@
 
 ## Tonight, before bed — 10 minutes
 
-**One thing still missing.** The `2fb68983-…` you pasted is your Medplum
-**Project ID**, which is not the same as a **Client ID** — the app needs the
-latter to sign in:
+### Medplum sign-in
 
-1. https://app.medplum.com → **Project Admin → Clients** → **New Client**
-2. Name it `Sentinel`, set redirect URI to `http://localhost:3000`
-3. Copy the **Client ID** into `MEDPLUM_CLIENT_ID` in `~/qimmune-hackathon/app/.env`
-4. Verify it works end to end:
-   ```bash
-   cd ~/qimmune-hackathon/app && npm run dev
-   ```
-   Open http://localhost:3000 and confirm you can actually sign in. **Do this
-   tonight** — an auth problem discovered at 10am costs you the morning.
+**Good news: you don't actually need a Client ID.** `MEDPLUM_CLIENT_ID` is
+optional — leave it blank and the app signs in with your normal Medplum
+email/password against your project. It's currently blank, so **just try it**:
+
+```bash
+cd ~/qimmune-hackathon/app && npm run dev
+```
+
+Open http://localhost:3000 and confirm you can sign in and see your project.
+**Do this tonight** — an auth problem found at 10am costs you the morning.
+
+<details>
+<summary>Why the Client ID you sent didn't work</summary>
+
+`202cc49d-e87e-43a7-b03d-53c938460ea2` returns **"Client not found"** from
+`api.medplum.com/oauth2/authorize` — byte-identical to what a randomly invented
+UUID returns. So it isn't a `ClientApplication` id on hosted Medplum. It's
+probably a different id from the admin UI (a ProjectMembership, a User, or a
+Bot), or the client wasn't saved.
+
+You only need one if you want programmatic/bot access later. To create one
+properly: **Project Admin → Clients → New Client**, redirect URI
+`http://localhost:3000`, then copy the id shown on the resulting
+*ClientApplication* resource page into `MEDPLUM_CLIENT_ID`.
+</details>
 
 Then:
 5. **Read SPEC.md §3 (clinical logic) and §8 (demo script).** You are the
