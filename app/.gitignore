@@ -23,3 +23,7 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+# Local secrets - never commit
+.env
+.env.local
