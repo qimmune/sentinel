@@ -51,12 +51,18 @@ Deepgram (voice). One-day hackathon build, Aug 1 2026, deadline 5:00pm.
 `vite.config.ts` exposes prefixes `MEDPLUM_`, `GOOGLE_`, `RECAPTCHA_`,
 `DEEPGRAM_`. Access as `import.meta.env.MEDPLUM_CLIENT_ID`.
 
-Needed:
+Already populated:
 ```
 MEDPLUM_BASE_URL=https://api.medplum.com/
-MEDPLUM_CLIENT_ID=<from app.medplum.com → Project Admin → Clients>
-DEEPGRAM_API_KEY=<from console.deepgram.com>
+MEDPLUM_CLIENT_ID=        # intentionally blank — email/password sign-in
+MEDPLUM_PROJECT_ID=2fb68983-…      # Q-Immune, Inc.
+MEDPLUM_PRACTITIONER_ID=202cc49d-… # Cameron McCann
+DEEPGRAM_API_KEY=…
 ```
+
+`MEDPLUM_PRACTITIONER_ID` is the real Practitioner in the project — **assign
+escalation `Task.owner` and `Flag.author` to this reference** so the demo shows
+work landing on a named clinician rather than a placeholder.
 
 > A browser-exposed Deepgram key is fine for a hackathon demo. Don't ship it,
 > and don't commit `.env`.
