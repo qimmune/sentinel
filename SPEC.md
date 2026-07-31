@@ -25,10 +25,17 @@ runs the neurotoxicity exam by voice, grades toxicity against the ASTCT
 consensus criteria on every new data point, and escalates to the care team the
 moment a patient crosses a threshold — with the evidence attached.
 
-**Why us:** Q-Immune is building safer, more effective immunotherapies. Safer
-cell products are what make outpatient CAR-T possible. Sentinel is the
-monitoring layer that has to exist on the other side of that. We're building
-the future our own therapeutics require.
+**Why us — tighter than "we're a CAR-T company":** Q-Immune's QMI platform reads
+protein-interaction networks in living cells to de-risk CAR-T constructs
+*before* they reach a patient. Sentinel grades toxicity *after* infusion.
+
+> **Predict the risk before infusion. Detect it after. Same problem, two ends of
+> the same timeline.**
+
+That's the line. It's not "biotech founder does a hackathon" — it's the same
+company closing the loop on the same failure mode from both directions, which is
+exactly the bench-to-bedside-to-bench story Q-Immune already tells. Use it in
+the pitch and in the Q&A.
 
 ---
 
