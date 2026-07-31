@@ -78,13 +78,18 @@ Then at the venue:
 
 ## How to work with Claude Code tomorrow
 
+**Copy-paste prompts for every tier are in [PROMPTS.md](PROMPTS.md).** Use them
+rather than composing under time pressure.
+
 You don't need to code. You need to describe and verify. Open a terminal:
 
 ```bash
 cd ~/qimmune-hackathon/app && claude
 ```
 
-It will read `CLAUDE.md` and `../SPEC.md` automatically. Then:
+Start it **in the `app` folder** so it picks up `CLAUDE.md` automatically, and
+start a **fresh session per tier** — long threads drift, which is Medplum's own
+warning in their AI guide. Then:
 
 - **Ask in outcomes, not code.** "Build the clinician dashboard from Tier 1 —
   five patients as cards, colored by CRS grade, worst first." Not "write a
