@@ -68,16 +68,27 @@ Then, separately:
 
 > Build Tier 2: the voice symptom check-in with Deepgram.
 >
-> The key is in .env as DEEPGRAM_API_KEY. Capture mic audio in the browser and
-> transcribe it. **Get a raw transcript printing to the console and show me
-> that working before you write anything else.**
+> The key is in .env as DEEPGRAM_API_KEY. Use the browser's `MediaRecorder` API
+> plus the `@deepgram/sdk` live/WebSocket client for streaming transcription.
+> **Get a raw transcript printing to the console and show me that working
+> before you write anything else.**
+>
+> If live streaming fights you for more than 30 minutes, switch to recording a
+> short clip and sending it to Deepgram's pre-recorded REST endpoint instead.
+> It looks identical in a demo and it's far more reliable in a loud room.
 
 Then, only once transcription works:
 
 > Now `src/voice/extract.ts`: take the transcript and return a SymptomFeatures
-> object — fever reported, confusion, word-finding difficulty, tremor, headache,
-> dizziness, drowsiness, seizure. It must return ONLY features. No tier, no
-> severity, no recommendation — that's triage.ts's job.
+> object — fever, confusion, wordFinding, tremor, headache, dizziness,
+> drowsiness, seizure.
+>
+> CRITICAL: force structured output — use tool/function calling or strict JSON
+> mode so the model returns a validated JSON object, never prose you have to
+> regex. Validate the shape before using it.
+>
+> It must return ONLY those booleans. No tier, no severity, no recommendation,
+> no free-text advice — that's triage.ts's job.
 >
 > Then wire it up: transcript in, features out, run triage(), and show all three
 > on screen side by side — what she said, what was extracted, what tier it
@@ -105,15 +116,23 @@ Then, only once transcription works:
 > RiskAssessment with the resulting tier. When the tier worsens, raise a Flag
 > and a Task owned by Practitioner/202cc49d-e87e-43a7-b03d-53c938460ea2.
 >
+> Then — only after the tier is already decided — have the LLM synthesize the
+> transcript plus the vitals/wearable delta into a 2-sentence clinical handover
+> note, saved on a Communication resource. Label it clearly as AI-drafted. The
+> note explains the decision; it must never influence it.
+>
 > If Bot deployment isn't working within 30 minutes, stop and tell me — we run
 > the same function client-side instead.
 
 Then the money feature:
 
 > Now make the agent decide when to ask. When the wearable feed shows rising
-> resting HR and falling HRV, have the agent trigger an off-schedule check-in
-> rather than waiting for the next scheduled one. This is the most important
-> feature of the demo — take the time to make it visible on screen.
+> resting HR and falling HRV, the Bot should create a FHIR Task for the patient
+> with status 'requested'. Have the React app poll for that Task and pop an
+> "Incoming check-in from your care team" overlay when it appears.
+>
+> This is the most important feature of the demo — make it big and obvious on
+> screen. Polling is fine; don't spend time on websockets.
 
 ---
 

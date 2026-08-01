@@ -117,10 +117,35 @@ narration layer over a form.
 |---|---|---|
 | **ROUTINE** | Log it, keep watching | mild fatigue, stable vitals |
 | **URGENT** | Care team contacts today | temp ≥38 °C; new confusion or word-finding trouble; resting HR trending up |
-| **EMERGENT** | Go in now | any seizure; unarousable/very drowsy; temp ≥38 °C **with** SpO₂ drop or dizziness on standing |
+| **EMERGENT** | Go in now | any seizure; unarousable; **unable to answer coherently**; temp ≥38 °C **with** SpO₂ drop or dizziness on standing |
 
 **High-risk patients shift down a tier.** A Q-Immune high-risk patient with a
 ROUTINE feature set gets URGENT. That's the integration, and it's one `if`.
+
+### The caregiver loop — your answer to the hardest question
+
+A judge will ask: *"a confused patient can't take their own blood pressure —
+how does this work?"* Have this ready.
+
+Every patient has an on-file caregiver. Two paths:
+
+- **Answers, but incoherently** — word salad, can't follow the prompt, can't
+  say where they are. That's the ICANS signal itself. Sentinel pages the
+  caregiver to take the BP and escalates immediately.
+- **Doesn't answer at all** — Sentinel retries, then pages the caregiver. If
+  the caregiver can't confirm the patient is well within a set window, it
+  escalates to the care team.
+
+**The line:** *"Silence isn't reassuring — it's unverified. We escalate to a
+human either way."*
+
+> **Do not say "no answer equals grade 4."** A missed call is not the same as
+> unarousable — patients shower, sleep, and let phones die. Auto-dispatching an
+> ambulance on every missed check-in would bury a real program in false alarms,
+> and that's exactly what a clinician judge will pounce on. The graduated
+> version above is both punchier and defensible. *Inability to answer coherently
+> when engaged* is a real ICANS signal; *not picking up* is a prompt to go find
+> a human.
 
 ### Where ASTCT still does the work
 
@@ -294,7 +319,12 @@ Patient PWA (phone)                             ▲
          │  3. + vitals + trend │
          │  4. + Q-Immune risk  │
          │  5. triage() -> tier │
-         │  6. → RiskAssessment │
+         │  6. LLM drafts the   │
+         │     handover note    │
+         │     (after the       │
+         │      decision, never │
+         │      part of it)     │
+         │  7. → RiskAssessment │
          │     + Flag + Task    │
          └──────────────────────┘
 ```
@@ -351,10 +381,15 @@ independently demoable.
 > fights you.
 
 ### Tier 2b — wearable feed, ~30 min (do it right after Tier 2)
-6b. Simulated wearable time series (HR, HRV, resp rate, SpO₂, wrist-temp
-    deviation) streaming into FHIR Observations, plotted on the patient
-    drill-down. Cheap to build, and it's what makes the escalation *look*
-    continuous rather than form-driven. See §3b.
+6b. Wearable time series (HR, HRV, resp rate, SpO₂) streaming into FHIR
+    Observations, plotted on the patient drill-down. Cheap, and it's what makes
+    the escalation *look* continuous rather than form-driven. See §3b.
+
+    **Load `src/wearable_seed_data.json`, pre-baked last night.** Do not parse
+    an Apple Health `export.xml` at the venue — those files run to hundreds of
+    MB and you will lose an hour to it. If the pre-bake didn't happen, use
+    scripted synthetic values and move on; nobody expects a device integration
+    in 8 hours.
 
 ### Tier 3 — the "agentic" proof, by ~4:00pm
 7. Medplum Bot + Subscription: fires on every new Observation/QuestionnaireResponse,
@@ -368,33 +403,24 @@ independently demoable.
 
 ### Tier 4 — only if time remains
 10. Draft escalation note for the care team, LLM-generated from the structured data.
-11. Apple Health export parser to seed one patient with your real watch data.
-12. **Stedi eligibility check — the business-model slide.** Only if Tier 3 is done.
-
-    Stedi is a clearinghouse: eligibility (270/271), claims, claim status. It has
-    nothing to do with CRS/ICANS, so it's not on the critical path — and there
-    are **zero Stedi judges** on the 6-person panel. But there's one angle that
-    earns its 20 minutes: **"is this patient covered for remote monitoring?"**
-
-    RPM has real billing codes (CPT 99453 setup / 99454 device supply /
-    99457 first 20 min of management). Running an eligibility check at enrollment
-    turns the pitch from "nice clinical tool" into "here's who pays." The whole
-    outpatient CAR-T thesis is economic, so this is the piece that makes the
-    money argument concrete — a **Diana Hu** point, not a clinical one.
-
-    Setup: portal.stedi.com → API Keys → Generate, type **Test**, name prefixed
-    `test`. Sandbox accounts are test-mode-only, which is all we need. Mock
-    payers: Aetna, Cigna, UHC, CMS. Free, no PHI. Endpoint and sample payload
-    are in the Drive doc "# Developer Docs Stedi". Skip their MCP server — it
-    needs a production account; just call the REST API.
-
-    Their docs pitch the MCP server for "voice agents that need to verify
-    benefits in real time" — same stack as ours, if you want the sponsor nod.
-
+11. Speech *latency* as a signal — Deepgram returns word-level timestamps, and
+    slowed/hesitant speech is a real neurotoxicity sign. Genuinely novel and the
+    most Deepgram-native feature available. Tier 4 only — do not promise it in
+    the demo unless it's actually built.
 ### Explicitly NOT doing
-Auth beyond Medplum's built-in · real wearable/HealthKit integrations · claims
-submission · mobile native · multi-tenancy · anything HIPAA-real. Say "synthetic
-data only" once and move on.
+Auth beyond Medplum's built-in · live HealthKit/XML parsing · **Stedi and
+anything billing-related** · mobile native · multi-tenancy · anything
+HIPAA-real. Say "synthetic data only" once and move on.
+
+**On the business model:** don't build an eligibility check — just say it.
+Remote monitoring bills under CPT 99453/99454/99457, but the real ROI is the
+avoided admission. Thirty minutes polishing the red/amber/green states beats
+thirty minutes hacking a mock claims API.
+
+> ⚠️ If you use a dollar figure for an avoided ICU night, **source it first**.
+> Published US ICU costs vary widely by setting and year, and a YC partner may
+> well know the real range. Safer framing that needs no citation: *"an avoided
+> ICU admission is worth more than a year of monitoring for that patient."*
 
 ---
 
@@ -478,7 +504,12 @@ understand*, not what you built.
 > flagged as high-risk before infusion — that's EMERGENT.
 > *[escalation fires, Maria goes red, Task lands on the on-call nurse]*
 >
-> The model decides what she said. It never decides how worried to be.
+> And look at the note it sent. The agent pulled her exact words together with
+> her overnight heart-rate drift and drafted a two-sentence handover for the
+> nurse — so whoever picks this up has the context, not just an alert.
+>
+> But the note didn't fire the alarm. The thresholds did. **The model decides
+> what she said and writes it up. It never decides how worried to be.**
 >
 > That's a patient who gets tocilizumab this afternoon instead of an ICU bed
 > tomorrow. In a published series, catching CRS that early kept 15 of 35
