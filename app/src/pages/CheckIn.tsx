@@ -27,6 +27,7 @@ import {
   IconDeviceFloppy,
   IconMicrophone,
   IconPlayerSkipForward,
+  IconVolume,
 } from '@tabler/icons-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
@@ -49,9 +50,10 @@ import {
   type Recorder,
 } from '../voice/capture';
 import { extractFeatures, type CheckInAnswer, type ExtractionResult } from '../voice/extract';
+import { CALL_GREETING, preloadSpeech, speak } from '../voice/speak';
 import type { SymptomFeatures } from '../voice/features';
 
-type Phase = 'idle' | 'briefing' | 'recording' | 'transcribing' | 'review';
+type Phase = 'idle' | 'briefing' | 'speaking' | 'recording' | 'transcribing' | 'review';
 
 const INTRO = CHECK_IN_SCRIPT.find((step) => step.kind === 'statement');
 
@@ -95,6 +97,10 @@ export function CheckIn(): JSX.Element {
   }, [medplum]);
 
   useEffect(() => () => recorderRef.current?.cancel(), []);
+
+  useEffect(() => {
+    preloadSpeech([CALL_GREETING, INTRO?.prompt ?? '', ...RECORDED_STEPS.map((s) => s.prompt)], getDeepgramApiKey());
+  }, []);
 
   /**
    * Poll for the agent asking to speak to this patient.
@@ -150,8 +156,16 @@ export function CheckIn(): JSX.Element {
     [entry]
   );
 
-  const beginRecording = useCallback(async () => {
+  /**
+   * Ask the question out loud, then listen. Strictly sequential — recording
+   * while the agent is speaking captures its own voice.
+   */
+  const askThenRecord = useCallback(async (prompt?: string) => {
     try {
+      if (prompt) {
+        setPhase('speaking');
+        await speak(prompt, getDeepgramApiKey());
+      }
       recorderRef.current = await startRecording();
       setPhase('recording');
     } catch (err) {
@@ -188,7 +202,7 @@ export function CheckIn(): JSX.Element {
 
       if (stepIndex + 1 < RECORDED_STEPS.length) {
         setStepIndex(stepIndex + 1);
-        await beginRecording();
+        await askThenRecord(RECORDED_STEPS[stepIndex + 1].prompt);
       } else {
         finish(collected);
       }
@@ -196,7 +210,7 @@ export function CheckIn(): JSX.Element {
       setError(normalizeErrorString(err));
       setPhase('idle');
     }
-  }, [answers, beginRecording, finish, step, stepIndex]);
+  }, [answers, askThenRecord, finish, step, stepIndex]);
 
   /** Leave this answer unrecorded. It stays 'unknown', never false. */
   const skip = useCallback(async () => {
@@ -204,11 +218,11 @@ export function CheckIn(): JSX.Element {
     recorderRef.current = undefined;
     if (stepIndex + 1 < RECORDED_STEPS.length) {
       setStepIndex(stepIndex + 1);
-      await beginRecording();
+      await askThenRecord(RECORDED_STEPS[stepIndex + 1].prompt);
     } else {
       finish(answers);
     }
-  }, [answers, beginRecording, finish, stepIndex]);
+  }, [answers, askThenRecord, finish, stepIndex]);
 
   const save = useCallback(async () => {
     if (!entry || !extraction) {
@@ -254,7 +268,15 @@ export function CheckIn(): JSX.Element {
       }
     }
     start();
-  }, [incoming, medplum, start]);
+    // The patient picked up — greet them, give the recall words, then begin.
+    void (async () => {
+      await speak(CALL_GREETING, getDeepgramApiKey());
+      if (INTRO?.prompt) {
+        await speak(INTRO.prompt, getDeepgramApiKey());
+      }
+      await askThenRecord(RECORDED_STEPS[0].prompt);
+    })();
+  }, [askThenRecord, incoming, medplum, start]);
 
   /** "Not now" — leave the Task open so the care team still sees it pending. */
   const declineIncoming = useCallback(() => {
@@ -264,7 +286,7 @@ export function CheckIn(): JSX.Element {
     setIncoming(undefined);
   }, [incoming]);
 
-  const busy = phase === 'recording' || phase === 'transcribing' || phase === 'briefing';
+  const busy = phase === 'recording' || phase === 'transcribing' || phase === 'briefing' || phase === 'speaking';
 
   return (
     <Box p="lg">
@@ -326,16 +348,24 @@ export function CheckIn(): JSX.Element {
           <Text size="lg" mb="md">
             “{INTRO.prompt}”
           </Text>
-          <Button onClick={() => void beginRecording()}>Ready — first question</Button>
+          <Button onClick={() => void askThenRecord(RECORDED_STEPS[0].prompt)}>Ready — first question</Button>
         </Card>
       )}
 
-      {(phase === 'recording' || phase === 'transcribing') && step && (
+      {(phase === 'recording' || phase === 'transcribing' || phase === 'speaking') && step && (
         <Card withBorder radius="md" padding="lg" mb="md">
           <Group justify="space-between" mb="xs">
             <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
               Question {stepIndex + 1} of {RECORDED_STEPS.length}
             </Text>
+            {phase === 'speaking' && (
+              <Group gap={6}>
+                <IconVolume size={16} />
+                <Text size="sm" c="dimmed">
+                  Sentinel is speaking…
+                </Text>
+              </Group>
+            )}
             {phase === 'recording' && (
               <Group gap={6}>
                 <Box
@@ -365,6 +395,7 @@ export function CheckIn(): JSX.Element {
               leftSection={<IconCheck size={16} />}
               onClick={() => void next()}
               loading={phase === 'transcribing'}
+              disabled={phase === 'speaking'}
             >
               {stepIndex + 1 === RECORDED_STEPS.length ? 'Finish' : 'Next question'}
             </Button>

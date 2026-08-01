@@ -11,8 +11,8 @@
  * criteria tell us which features matter and at what thresholds; they are not
  * the output. See SPEC.md §3.
  *
- * The language model decides what the patient said. It never decides how
- * worried to be. That happens here.
+ * Speech recognition and answer scoring decide what the patient SAID. They
+ * never decide how worried to be. That happens here, and only here.
  */
 
 import { present, type SymptomFeatures } from '../voice/features';
