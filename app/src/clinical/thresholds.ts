@@ -58,3 +58,30 @@ export const SEVERE_HYPOXIA_SPO2 = 88;
  * of action of acetaminophen. [PROXY] on the number, [ASTCT] on the rule.
  */
 export const ANTIPYRETIC_WINDOW_HOURS = 6;
+
+/**
+ * ICE points collectable over a voice call.
+ *
+ * [ASTCT] The full ICE score is 10 points (Table 5). [PROXY] Two of them —
+ * following commands ("show me two fingers") and writing — need someone in the
+ * room, so a phone check-in tops out at 8. See checkInScript.ts.
+ *
+ * This is why the bands below are NOT the ASTCT bands: scoring an 8/8 patient
+ * against the 10-point scale (7-9 = grade 1) would flag a perfectly oriented
+ * patient as impaired.
+ */
+export const ICE_ASSESSABLE_POINTS = 8;
+
+/**
+ * [PROXY] At or below this, the cognitive deficit is large enough to send the
+ * patient in. Roughly the bottom half of the assessable scale.
+ */
+export const ICE_MAJOR_DEFICIT_AT = 4;
+
+/**
+ * [PROXY] Any shortfall below full marks is a new objective cognitive deficit
+ * in a CAR-T outpatient, which warrants same-day contact. Deliberately
+ * sensitive: missing one orientation item is cheap to chase and expensive to
+ * ignore.
+ */
+export const ICE_ANY_DEFICIT_BELOW = ICE_ASSESSABLE_POINTS;

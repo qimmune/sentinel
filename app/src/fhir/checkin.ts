@@ -9,6 +9,7 @@
 import type { Questionnaire, QuestionnaireResponse, QuestionnaireResponseItem, Reference, Patient } from '@medplum/fhirtypes';
 import type { ConsciousnessLevel, Coherence, FeatureValue, SymptomFeatures } from '../voice/features';
 import { unknownFeatures } from '../voice/features';
+import { ICE_ASSESSABLE_POINTS } from '../clinical/thresholds';
 import { SENTINEL_IDENTIFIER_SYSTEM, SYMPTOM_QUESTIONNAIRE_URL } from './codes';
 
 /** linkId -> the SymptomFeatures key it carries. */
@@ -28,10 +29,11 @@ const BOOLEAN_ITEMS = [
 type BooleanFeatureKey = (typeof BOOLEAN_ITEMS)[number][0];
 
 /**
- * The check-in questionnaire. Note this is the *shape of the extracted data*,
- * not a script the patient is read: the patient speaks freely and the LLM fills
- * this in. It doubles as the structured fallback question set if free-text
- * extraction proves flaky (SPEC.md §5).
+ * The check-in questionnaire — the shape of the extracted data.
+ *
+ * This build fills it from the structured question set in checkInScript.ts,
+ * scored deterministically with no model in the loop (SPEC.md §5's documented
+ * fallback). The shape is unchanged if free-text extraction is added later.
  */
 export const symptomQuestionnaire: Questionnaire = {
   resourceType: 'Questionnaire',
@@ -55,6 +57,11 @@ export const symptomQuestionnaire: Questionnaire = {
       text: 'Could the patient answer coherently?',
       type: 'choice' as const,
       answerOption: (['coherent', 'incoherent', 'noResponse'] as const).map((code) => ({ valueString: code })),
+    },
+    {
+      linkId: 'iceScore',
+      text: `ICE score, out of the ${ICE_ASSESSABLE_POINTS} points assessable by voice`,
+      type: 'integer' as const,
     },
     { linkId: 'transcript', text: 'Verbatim transcript', type: 'text' as const },
   ],
@@ -88,6 +95,9 @@ export function buildCheckInResponse(
   }
   if (features.coherence !== 'unknown') {
     item.push({ linkId: 'coherence', answer: [{ valueString: features.coherence }] });
+  }
+  if (features.iceScore !== 'unknown') {
+    item.push({ linkId: 'iceScore', answer: [{ valueInteger: features.iceScore }] });
   }
   if (transcript) {
     item.push({ linkId: 'transcript', answer: [{ valueString: transcript }] });
@@ -128,6 +138,11 @@ export function toSymptomFeatures(response: QuestionnaireResponse): SymptomFeatu
   const coherence = stringAnswer(response, 'coherence');
   if (coherence) {
     features.coherence = coherence as Coherence;
+  }
+
+  const iceScore = response.item?.find((i) => i.linkId === 'iceScore')?.answer?.[0]?.valueInteger;
+  if (iceScore !== undefined) {
+    features.iceScore = iceScore;
   }
 
   return features;

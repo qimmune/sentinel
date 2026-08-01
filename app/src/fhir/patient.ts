@@ -41,3 +41,8 @@ export function getPatientName(patient: Patient): string {
   }
   return [name.given?.join(' '), name.family].filter(Boolean).join(' ') || 'Unnamed patient';
 }
+
+/** Home city — ground truth for the ICE orientation item. */
+export function getPatientCity(patient: Patient): string | undefined {
+  return patient.address?.find((address) => address.city)?.city;
+}

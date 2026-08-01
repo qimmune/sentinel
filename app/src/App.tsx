@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: Copyright Orangebot, Inc. and Medplum contributors
 // SPDX-License-Identifier: Apache-2.0
 import { AppShell, ErrorBoundary, Loading, Logo, useMedplum, useMedplumProfile } from '@medplum/react';
-import { IconUser } from '@tabler/icons-react';
+import { IconMicrophone, IconUser } from '@tabler/icons-react';
 import { Suspense } from 'react';
 import type { JSX } from 'react';
 import { Route, Routes } from 'react-router';
 import { PatientHistory } from './components/PatientHistory';
 import { PatientOverview } from './components/PatientOverview';
 import { Timeline } from './components/Timeline';
+import { CheckIn } from './pages/CheckIn';
 import { CohortBoard } from './pages/CohortBoard';
 import { PatientDetail } from './pages/PatientDetail';
 import { HomePage } from './pages/HomePage';
@@ -33,6 +34,7 @@ export function App(): JSX.Element | null {
           title: 'Sentinel',
           links: [
             { icon: <IconUser />, label: 'Cohort', href: '/' },
+            { icon: <IconMicrophone />, label: 'Voice check-in', href: '/check-in' },
             { icon: <IconUser />, label: 'Browse resources', href: '/browse' },
           ],
         },
@@ -42,6 +44,7 @@ export function App(): JSX.Element | null {
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route path="/" element={profile ? <CohortBoard /> : <LandingPage />} />
+            <Route path="/check-in" element={<CheckIn />} />
             {/* The starter's patient search, kept for poking at raw resources. */}
             <Route path="/browse" element={<HomePage />} />
             <Route path="/signin" element={<SignInPage />} />

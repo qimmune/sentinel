@@ -6,9 +6,11 @@
  * It must never return a tier, a grade, a severity, or a recommendation.
  * Those come from `src/clinical/triage.ts`, deterministically. See SPEC.md §3.
  *
- * This file is types + constructors only — no runtime dependencies — so
- * `clinical/` can `import type` from it without taking on any coupling.
+ * This file is types and constructors only. Its one import is a clinical
+ * constant, so `clinical/` can still `import type` from it without a cycle.
  */
+
+import { ICE_ASSESSABLE_POINTS } from '../clinical/thresholds';
 
 /**
  * Tri-state. "The patient didn't mention it" is not the same as "the patient
@@ -30,6 +32,12 @@ export type ConsciousnessLevel = 'alert' | 'wakesToVoice' | 'wakesToTactile' | '
 export type Coherence = 'coherent' | 'incoherent' | 'noResponse' | 'unknown';
 
 export interface SymptomFeatures {
+  /**
+   * ICE points earned, out of ICE_ASSESSABLE_POINTS (8 over voice, not 10 —
+   * two ICE items need someone in the room). 'unknown' when no cognitive
+   * screen was done.
+   */
+  iceScore: number | 'unknown';
   /** Patient *reports* feeling feverish. Not a measurement — see Vitals.tempC. */
   fever: FeatureValue;
   confusion: FeatureValue;
@@ -56,6 +64,7 @@ export interface SymptomFeatures {
  */
 export function unknownFeatures(): SymptomFeatures {
   return {
+    iceScore: 'unknown',
     fever: 'unknown',
     confusion: 'unknown',
     wordFinding: 'unknown',
@@ -77,6 +86,7 @@ export function unknownFeatures(): SymptomFeatures {
  */
 export function noFindings(): SymptomFeatures {
   return {
+    iceScore: ICE_ASSESSABLE_POINTS,
     fever: false,
     confusion: false,
     wordFinding: false,

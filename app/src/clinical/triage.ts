@@ -20,6 +20,9 @@ import {
   FEVER_C,
   HYPOTENSION_SBP,
   HYPOXIA_SPO2,
+  ICE_ANY_DEFICIT_BELOW,
+  ICE_ASSESSABLE_POINTS,
+  ICE_MAJOR_DEFICIT_AT,
   LOW_GRADE_TEMP_C,
   SEVERE_HYPOTENSION_SBP,
   SEVERE_HYPOXIA_SPO2,
@@ -179,6 +182,18 @@ export function explainTriage(features: SymptomFeatures, vitals: Vitals, riskTie
 
   if (present(features.seizure)) {
     finding('EMERGENT', 'seizure', 'Seizure reported — by the patient or the caregiver');
+  }
+
+  // The ICE cognitive screen, when one was done. This is a measured domain
+  // rather than a self-report, so it stands alongside `confusion` rather than
+  // replacing it — the worst of the two wins, like every other domain here.
+  if (typeof features.iceScore === 'number' && features.iceScore < ICE_ANY_DEFICIT_BELOW) {
+    const detail = `ICE ${features.iceScore}/${ICE_ASSESSABLE_POINTS} on the voice-assessable items`;
+    if (features.iceScore <= ICE_MAJOR_DEFICIT_AT) {
+      finding('EMERGENT', 'iceMajorDeficit', `${detail} — major cognitive deficit`);
+    } else {
+      finding('URGENT', 'iceMildDeficit', `${detail} — new cognitive deficit`);
+    }
   }
 
   if (features.consciousness === 'unarousable') {

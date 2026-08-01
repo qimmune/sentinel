@@ -37,6 +37,8 @@ export interface SeedPatient {
   family: string;
   gender: Patient['gender'];
   birthDate: string;
+  /** Home city — the ground truth for the ICE orientation item. */
+  city: string;
   dayPostInfusion: number;
   riskTier: RiskTier;
   /** Oldest first. The last entry (hoursAgo 0) is the current reading. */
@@ -68,6 +70,7 @@ export function currentVitals(seed: SeedPatient): Vitals {
 export const SEED_PATIENTS: SeedPatient[] = [
   {
     key: 'sentinel-maria',
+    city: 'San Francisco',
     given: 'Maria',
     family: 'Delgado',
     gender: 'female',
@@ -91,6 +94,7 @@ export const SEED_PATIENTS: SeedPatient[] = [
   },
   {
     key: 'sentinel-james',
+    city: 'Oakland',
     given: 'James',
     family: 'Okafor',
     gender: 'male',
@@ -116,6 +120,7 @@ export const SEED_PATIENTS: SeedPatient[] = [
   },
   {
     key: 'sentinel-priya',
+    city: 'San Jose',
     given: 'Priya',
     family: 'Raman',
     gender: 'female',
@@ -136,6 +141,7 @@ export const SEED_PATIENTS: SeedPatient[] = [
   },
   {
     key: 'sentinel-walter',
+    city: 'Berkeley',
     given: 'Walter',
     family: 'Chen',
     gender: 'male',
@@ -155,6 +161,7 @@ export const SEED_PATIENTS: SeedPatient[] = [
   },
   {
     key: 'sentinel-aisha',
+    city: 'Daly City',
     given: 'Aisha',
     family: 'Bello',
     gender: 'female',

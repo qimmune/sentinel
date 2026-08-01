@@ -87,6 +87,7 @@ function buildPatient(seed: SeedPatient): Patient {
     name: [{ given: [seed.given], family: seed.family }],
     gender: seed.gender,
     birthDate: seed.birthDate,
+    address: [{ city: seed.city, state: 'CA', country: 'US' }],
     extension: [
       { url: EXT_RISK_TIER, valueCode: seed.riskTier },
       { url: EXT_INFUSION_DATE, valueDate: isoDaysAgo(seed.dayPostInfusion) },
