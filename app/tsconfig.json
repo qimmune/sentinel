@@ -16,5 +16,9 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "exclude": ["dist"]
+  // Scope to our own src/ only. Without this, tsc follows the medplum-link
+  // symlink and typechecks Medplum's entire monorepo (~1800 files) until it
+  // runs out of heap. Same reason vitest.config.ts scopes its `include`.
+  "include": ["src"],
+  "exclude": ["dist", "medplum-link"]
 }
