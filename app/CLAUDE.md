@@ -42,6 +42,11 @@ FHIR) + React/Vite/Mantine + Deepgram (voice). One-day build, deadline 5:00pm.
 
    Write unit tests for both edge cases **first**, before any UI.
 
+   **Scope guard:** model "patient took an antipyretic recently" as a single
+   boolean — one field on the vitals form or one coded Observation. Do **not**
+   build MedicationAdministration / MedicationStatement resources or a
+   medication graph search. It's an hour of work for zero demo value.
+
 2. **Q-Immune risk tier modulates the thresholds.** Every Patient carries a
    pre-infusion risk tier (`standard | elevated | high`). A `high` patient
    escalates one tier sooner. This is one `if` — and it's the thing that makes
@@ -133,4 +138,8 @@ and produce plausible-but-wrong code." Check generated FHIR against
 - Medplum Bots need a deployed Bot resource + a Subscription with a criteria
   string. If this fights you past ~30 min, run the identical triage function
   client-side. Same demo, less risk.
+- A Bot that searches a patient's historical Observations needs permission to
+  do so. If you get a `forbidden` OperationOutcome, that's an access-policy
+  problem, **not** a bug in the code — don't rewrite the logic. See how
+  `medplum-link/examples/medplum-demo-bots` grants bot access.
 - Vite is pinned to port 3000; Medplum OAuth redirect URIs must match exactly.

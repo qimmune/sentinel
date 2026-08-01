@@ -46,9 +46,13 @@ section 3 again, especially the pipeline diagram" before letting it touch code.
 > Pure TypeScript, no React, no Medplum, no LLM calls.
 >
 > Write the unit tests first. Cover: (1) the antipyretic case — no fever, took
-> Tylenol two hours ago, low blood pressure, must still escalate; (2) a
-> high-risk patient escalating a tier sooner than a standard-risk patient on
-> identical symptoms; (3) any reported seizure going straight to EMERGENT.
+> Tylenol two hours ago, low blood pressure, must still escalate. **Model the
+> recent antipyretic as a simple boolean — one field on the vitals form or one
+> coded Observation. Do NOT build MedicationAdministration/MedicationStatement
+> resources or any medication graph search; that's an hour of work for zero
+> demo value.** (2) a high-risk patient escalating a tier sooner than a
+> standard-risk patient on identical symptoms; (3) any reported seizure going
+> straight to EMERGENT.
 >
 > Show me the tests passing before you build any UI.
 
@@ -61,6 +65,20 @@ Then, separately:
 > worst first, showing the risk tier on each card. Use Mantine components.
 >
 > When it's running, open it in the browser and show me.
+
+---
+
+## Tier 1b — the vitals stream
+
+> Build Tier 1b: a simulated vitals stream. A scripted time series of
+> temperature, heart rate, blood pressure and SpO2 per patient, written as FHIR
+> Observations and plotted on the patient detail page. Label it "simulated" in
+> the UI.
+>
+> For Maria, script an overnight drift on day 7 — temperature and heart rate
+> climbing — because that's what the agent reacts to in the demo.
+>
+> Pure synthetic data. No device integration, no HealthKit, no file parsing.
 
 ---
 
@@ -96,20 +114,6 @@ Then, only once transcription works:
 
 ---
 
-## Tier 1b — the vitals stream
-
-> Build Tier 1b: a simulated vitals stream. A scripted time series of
-> temperature, heart rate, blood pressure and SpO2 per patient, written as FHIR
-> Observations and plotted on the patient detail page. Label it "simulated" in
-> the UI.
->
-> For Maria, script an overnight drift on day 7 — temperature and heart rate
-> climbing — because that's what the agent reacts to in the demo.
->
-> Pure synthetic data. No device integration, no HealthKit, no file parsing.
-
----
-
 ## Tier 3 — the agent
 
 > Build Tier 3. Look at medplum-link/examples/medplum-demo-bots and
@@ -119,6 +123,11 @@ Then, only once transcription works:
 > Then: a Bot that fires on new Observations, re-runs triage(), and writes a
 > RiskAssessment with the resulting tier. When the tier worsens, raise a Flag
 > and a Task owned by Practitioner/202cc49d-e87e-43a7-b03d-53c938460ea2.
+>
+> The Bot has to search each patient's historical Observations to see the trend,
+> so make sure it runs with permissions that allow that. Check how the bots in
+> medplum-link/examples/medplum-demo-bots are granted access before you write
+> it.
 >
 > Then — only after the tier is already decided — have the LLM synthesize the
 > transcript plus the vitals trend into a 2-sentence clinical handover
@@ -156,6 +165,10 @@ It can drive a browser. Make it prove things run — don't take "done" on faith.
 > Commit this with a clear message.
 
 Do this at every working state. It's your undo button for the whole day.
+
+**When you see `forbidden` or an access error:**
+> This is a permissions problem, not a logic problem. Don't change the triage
+> code — fix how the Bot is granted access to search Observations.
 
 **When it's going in circles** (twice on the same bug is the signal):
 > Stop. Explain what you think is happening and what you've already tried.
