@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sentinel — Q-Immune</title>
+<style>
+  /* Self-contained and offline: no webfonts, no CDN, nothing to fail mid-take. */
+  :root {
+    --bg: #0a0e14;
+    --ink: #f2f5f8;
+    --dim: #8b96a5;
+    --accent: #ff5a5f;
+    --teal: #2dd4a7;
+    --amber: #ffa94d;
+    --grape: #b18cf5;
+    --line: #1e2733;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-feature-settings: "tnum";
+    overflow: hidden;
+  }
+
+  .deck { height: 100%; position: relative; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6vh 9vw;
+    animation: rise .35s ease-out;
+  }
+  .slide.on { display: flex; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+  .eyebrow {
+    font-size: clamp(13px, 1.5vw, 20px);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 2.5vh;
+    font-weight: 600;
+  }
+  h1 {
+    font-size: clamp(44px, 8.5vw, 132px);
+    line-height: .95;
+    letter-spacing: -.035em;
+    font-weight: 700;
+  }
+  h2 {
+    font-size: clamp(32px, 5.2vw, 78px);
+    line-height: 1.05;
+    letter-spacing: -.03em;
+    font-weight: 700;
+  }
+  .lede {
+    font-size: clamp(19px, 2.5vw, 38px);
+    line-height: 1.4;
+    color: var(--dim);
+    margin-top: 3vh;
+    max-width: 24ch;
+  }
+  .wide { max-width: 34ch; }
+
+  .huge {
+    font-size: clamp(90px, 18vw, 260px);
+    line-height: .9;
+    letter-spacing: -.05em;
+    font-weight: 700;
+    /* Descenders on 'y'/'g' overrun a tight line-height and collide with the
+       text below. Reserve the space rather than loosening the whole line. */
+    padding-bottom: .1em;
+  }
+  .accent { color: var(--accent); }
+  .teal { color: var(--teal); }
+  .amber { color: var(--amber); }
+  .grape { color: var(--grape); }
+
+  /* Stat rows */
+  .stats { display: flex; flex-direction: column; gap: 4.5vh; margin-top: 4vh; }
+  .stat { display: flex; align-items: baseline; gap: 2.5vw; }
+  .stat .num {
+    font-size: clamp(38px, 6vw, 92px);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    min-width: 5.5ch;
+    line-height: 1;
+  }
+  .stat .txt { font-size: clamp(16px, 1.9vw, 28px); line-height: 1.35; color: var(--dim); max-width: 26ch; }
+  .stat .txt b { color: var(--ink); font-weight: 600; }
+
+  /* Pipeline */
+  .flow { display: flex; flex-direction: column; gap: 1.6vh; margin-top: 4vh; }
+  .step { display: flex; align-items: center; gap: 1.6vw; font-size: clamp(16px, 2vw, 31px); }
+  .step .dot {
+    width: .62em; height: .62em; border-radius: 50%; flex: none;
+    background: var(--teal);
+  }
+  .step.warn .dot { background: var(--amber); }
+  .step.bad .dot { background: var(--accent); }
+  .step .lbl { color: var(--dim); }
+  .step .lbl b { color: var(--ink); font-weight: 600; }
+
+  .rule { height: 1px; background: var(--line); margin: 4vh 0; }
+
+  .kicker {
+    font-size: clamp(17px, 2.1vw, 32px);
+    color: var(--dim);
+    margin-top: 4vh;
+    line-height: 1.4;
+    max-width: 32ch;
+  }
+  .kicker b { color: var(--ink); font-weight: 600; }
+
+  .src { position: absolute; bottom: 4vh; left: 9vw; right: 9vw; font-size: clamp(10px, 1.05vw, 15px); color: #5a6675; line-height: 1.6; }
+
+  .chrome { position: fixed; bottom: 3vh; right: 3vw; font-size: 13px; color: #48525f; letter-spacing: .08em; }
+  .brand { position: fixed; top: 3.5vh; left: 9vw; font-size: clamp(11px, 1.15vw, 15px); letter-spacing: .22em; text-transform: uppercase; color: #4b5663; font-weight: 600; }
+  .slide:first-child ~ .brand { display: block; }
+
+  @media print { .chrome, .brand { display: none; } }
+</style>
+</head>
+<body>
+<div class="brand">Q-Immune</div>
+<div class="deck" id="deck">
+
+  <!-- 1 ------------------------------------------------------------------ -->
+  <section class="slide on">
+    <h1>Sentinel</h1>
+    <p class="lede wide">The agent that watches CAR-T patients at&nbsp;home — so they don't have to stay in&nbsp;hospital.</p>
+  </section>
+
+  <!-- 2 ------------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">The problem</div>
+    <div class="huge accent">19 days</div>
+    <p class="lede wide">Median inpatient stay after CAR-T infusion. Not because the therapy fails — because of what might happen next.</p>
+    <div class="src">Gregory T, et al. Outpatient vs inpatient cilta-cel: systematic review. Cancers 2026. doi:10.3390/cancers18050755</div>
+  </section>
+
+  <!-- 3 ------------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">Why</div>
+    <h2>Two toxicities we know<br />how to recognise.</h2>
+    <p class="lede wide">Cytokine release syndrome and neurotoxicity. We just can't watch for them at home — so we admit everyone, for weeks, to be sure.</p>
+    <div class="kicker"><b>That inpatient requirement is the bottleneck on CAR-T access.</b> It caps how many patients a centre can treat.</div>
+  </section>
+
+  <!-- 4 ------------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">The solution</div>
+    <h2>Sentinel watches<br />from home.</h2>
+    <div class="flow">
+      <div class="step"><span class="dot"></span><span class="lbl">Vitals stream from the patient's home</span></div>
+      <div class="step warn"><span class="dot"></span><span class="lbl">Temperature <b>and</b> heart rate climbing together</span></div>
+      <div class="step warn"><span class="dot"></span><span class="lbl">The agent <b>decides to call</b> — it doesn't wait for morning</span></div>
+      <div class="step"><span class="dot"></span><span class="lbl">Deepgram listens to how they describe their symptoms</span></div>
+      <div class="step bad"><span class="dot"></span><span class="lbl">Triaged against <b>ASTCT consensus criteria</b></span></div>
+      <div class="step bad"><span class="dot"></span><span class="lbl">Escalation written into the EHR via <b>Medplum</b></span></div>
+    </div>
+  </section>
+
+  <!-- 5 ------------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">The design decision</div>
+    <h2>Nothing that guesses<br />gets to decide.</h2>
+    <p class="lede wide">Voice is how we <em>collect</em> it. Deterministic rules are how we <em>decide</em>.</p>
+    <div class="kicker">We don't let a language model decide how worried to be about a cancer patient. The thresholds come from the published consensus criteria, they're unit-tested, and every escalation cites the exact symptoms and readings behind it.</div>
+  </section>
+
+  <!-- 6 ------------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">Why it works</div>
+    <div class="stats">
+      <div class="stat">
+        <span class="num teal">15/35</span>
+        <span class="txt">patients kept <b>out of hospital entirely</b> when grade&nbsp;1 CRS was caught early. This is the thing Sentinel automates.</span>
+      </div>
+      <div class="stat">
+        <span class="num amber">$40k</span>
+        <span class="txt">saved per patient in the <b>first 30 days</b> outpatient. $53k at 90 days.</span>
+      </div>
+      <div class="stat">
+        <span class="num grape">4–6</span>
+        <span class="txt">days median stay outpatient, <b>against 19 inpatient</b>. You don't eliminate the admission — you shorten it.</span>
+      </div>
+    </div>
+    <div class="src">
+      Furqan F, et al. Blood Adv 2024. doi:10.1182/bloodadvances.2024013239 &nbsp;·&nbsp;
+      Janakiram M, et al. J Comp Eff Res 2026 (n=99). doi:10.57264/cer-2026-0052 &nbsp;·&nbsp;
+      Gregory T, et al. Cancers 2026. doi:10.3390/cancers18050755
+    </div>
+  </section>
+
+  <!-- 7 ------------------------------------------------------------------ -->
+  <section class="slide">
+    <div class="eyebrow">Why Q-Immune</div>
+    <h2>We close the loop.</h2>
+    <div class="flow">
+      <div class="step"><span class="dot"></span><span class="lbl"><b>Predict</b> — QMI reads protein networks to flag toxicity risk before infusion</span></div>
+      <div class="step warn"><span class="dot"></span><span class="lbl"><b>Tune</b> — that risk sets how sensitively Sentinel watches</span></div>
+      <div class="step bad"><span class="dot"></span><span class="lbl"><b>Catch</b> — the complication, at home, early</span></div>
+      <div class="step"><span class="dot"></span><span class="lbl"><b>Feed</b> — every event caught is labelled ground truth for the model</span></div>
+    </div>
+    <div class="kicker">The monitoring product generates the training data the prediction product needs. Nobody else has both ends.</div>
+  </section>
+
+  <!-- 8 ------------------------------------------------------------------ -->
+  <section class="slide">
+    <h2>Outpatient CAR-T should be<br />the standard of care.</h2>
+    <p class="lede wide">Sentinel is the monitoring layer that makes it safe.</p>
+    <div class="kicker"><b>Cameron McCann · Q-Immune</b><br />Built on Medplum and Deepgram.</div>
+  </section>
+
+</div>
+<div class="chrome"><span id="n">1</span> / <span id="t">8</span></div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const counter = document.getElementById('n');
+  document.getElementById('t').textContent = slides.length;
+  let i = 0;
+
+  function show(next) {
+    i = Math.max(0, Math.min(slides.length - 1, next));
+    slides.forEach((s, k) => s.classList.toggle('on', k === i));
+    counter.textContent = i + 1;
+  }
+
+  addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+    if (e.key === 'f') document.documentElement.requestFullscreen?.();
+  });
+
+  // Tap/click anywhere advances; shift-click goes back.
+  addEventListener('click', (e) => show(e.shiftKey ? i - 1 : i + 1));
+</script>
+</body>
+</html>
