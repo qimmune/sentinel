@@ -290,10 +290,11 @@ Patient PWA (phone)                             ▲
          ┌──────────────────────┐
          │  Medplum Bot         │  ← the "agent"
          │  1. gather last 24h  │
-         │  2. ASTCT CRS grade  │
-         │  3. ICE → ICANS grade│
-         │  4. trend delta      │
-         │  5. → RiskAssessment │
+         │  2. symptom features │
+         │  3. + vitals + trend │
+         │  4. + Q-Immune risk  │
+         │  5. triage() -> tier │
+         │  6. → RiskAssessment │
          │     + Flag + Task    │
          └──────────────────────┘
 ```
@@ -357,7 +358,8 @@ independently demoable.
 
 ### Tier 3 — the "agentic" proof, by ~4:00pm
 7. Medplum Bot + Subscription: fires on every new Observation/QuestionnaireResponse,
-   recomputes both grades, writes RiskAssessment, raises Flag + Task on threshold crossing.
+   re-runs `triage()`, writes a RiskAssessment with the tier, and raises Flag +
+   Task when the tier worsens.
 8. **Wearable drift → agent initiates an off-schedule check-in.** This is the
    money feature: the Bot sees resting HR climbing + HRV falling, and *triggers
    the voice assessment on its own* rather than waiting for tomorrow's slot.
