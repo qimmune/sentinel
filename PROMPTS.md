@@ -26,12 +26,14 @@ When a tier is done and committed, type `/clear` and start the next one clean.
 ## Prompt 0 — orientation (30 seconds, do it once)
 
 > Read CLAUDE.md and ../SPEC.md. Summarize back to me in 5 bullets: what we're
-> building, the build order, and the two clinical rules that are easy to get
-> wrong. Don't write any code yet.
+> building, the build order, the boundary between what the LLM does and what the
+> deterministic rules do, and the two clinical rules that are easy to get wrong.
+> Don't write any code yet.
 
-**You are checking its answer.** If it can't name the antipyretic rule and the
-ICANS five-domain max, it didn't read carefully — say "read SPEC.md section 3
-again" before letting it touch code.
+**You are checking its answer.** It must say that the LLM extracts symptom
+features and *never* decides the triage tier. If it describes the LLM deciding
+urgency, or talks about outputting a CRS grade, it misread — say "read SPEC.md
+section 3 again, especially the pipeline diagram" before letting it touch code.
 
 ---
 
@@ -39,19 +41,24 @@ again" before letting it touch code.
 
 > Build Tier 1 from SPEC.md section 5.
 >
-> Start with the clinical logic only: `src/clinical/crs.ts` with `gradeCRS`,
-> as pure TypeScript with no React or Medplum imports. Write the unit tests
-> first, including the antipyretic case from SPEC.md section 3 — a patient with
-> no fever who took Tylenol two hours ago and is hypotensive must still grade.
+> Start with the deterministic logic only: `src/clinical/triage.ts` exporting
+> `triage(features, vitals, riskTier)` returning ROUTINE, URGENT or EMERGENT.
+> Pure TypeScript, no React, no Medplum, no LLM calls.
+>
+> Write the unit tests first. Cover: (1) the antipyretic case — no fever, took
+> Tylenol two hours ago, low blood pressure, must still escalate; (2) a
+> high-risk patient escalating a tier sooner than a standard-risk patient on
+> identical symptoms; (3) any reported seizure going straight to EMERGENT.
 >
 > Show me the tests passing before you build any UI.
 
 Then, separately:
 
-> Now the FHIR layer: seed 5 synthetic patients at days 3–12 post-infusion with
+> Now the FHIR layer: seed 5 synthetic patients at days 3–12 post-infusion,
+> each with a Q-Immune pre-infusion risk tier (standard/elevated/high), and
 > vitals as Observations using the LOINC codes in SPEC.md section 4. Then the
-> clinician cohort board — five patient cards, colored by current CRS grade,
-> worst first. Use Mantine components.
+> clinician cohort board — five patient cards, colored by current triage tier,
+> worst first, showing the risk tier on each card. Use Mantine components.
 >
 > When it's running, open it in the browser and show me.
 
@@ -59,15 +66,22 @@ Then, separately:
 
 ## Tier 2 — voice
 
-> Build Tier 2: the ICE assessment by voice with Deepgram.
+> Build Tier 2: the voice symptom check-in with Deepgram.
 >
-> The key is in .env as DEEPGRAM_API_KEY. Capture mic audio in the browser,
-> transcribe, and turn the spoken answers into a structured score. Remember from
-> SPEC.md that the writing item can't be scored by voice — capture that one
-> on-screen and score the other 9 by speech.
+> The key is in .env as DEEPGRAM_API_KEY. Capture mic audio in the browser and
+> transcribe it. **Get a raw transcript printing to the console and show me
+> that working before you write anything else.**
+
+Then, only once transcription works:
+
+> Now `src/voice/extract.ts`: take the transcript and return a SymptomFeatures
+> object — fever reported, confusion, word-finding difficulty, tremor, headache,
+> dizziness, drowsiness, seizure. It must return ONLY features. No tier, no
+> severity, no recommendation — that's triage.ts's job.
 >
-> Build the transcription working end to end first, before any scoring logic.
-> Show me a raw transcript in the console before you go further.
+> Then wire it up: transcript in, features out, run triage(), and show all three
+> on screen side by side — what she said, what was extracted, what tier it
+> produced. That audit trail is the demo, so make it look good.
 
 ---
 
@@ -87,9 +101,9 @@ Then, separately:
 > medplum-link/examples/medplum-websocket-subscriptions-demo first and tell me
 > the pattern you're going to follow before writing anything.
 >
-> Then: a Bot that fires on new Observations, recomputes both grades, and writes
-> a RiskAssessment. On a threshold crossing, raise a Flag and a Task owned by
-> Practitioner/202cc49d-e87e-43a7-b03d-53c938460ea2.
+> Then: a Bot that fires on new Observations, re-runs triage(), and writes a
+> RiskAssessment with the resulting tier. When the tier worsens, raise a Flag
+> and a Task owned by Practitioner/202cc49d-e87e-43a7-b03d-53c938460ea2.
 >
 > If Bot deployment isn't working within 30 minutes, stop and tell me — we run
 > the same function client-side instead.
@@ -135,9 +149,12 @@ Then take that explanation to the Medplum or Deepgram staff in the room.
 - **Don't debug alone past 15 minutes.** Sponsor engineers are right there and
   they want you to use their product successfully.
 - **Don't refactor after 16:00.** Freeze means freeze.
-- **Don't skip reading the grading code.** You're the only person in the room
-  who can catch a wrong clinical threshold. Read `src/clinical/` yourself
-  against SPEC.md section 3.
+- **Don't skip reading `src/clinical/triage.ts`.** You're the only person in
+  the room who can catch a wrong clinical threshold. Read it yourself against
+  SPEC.md section 3.
+- **Don't let the LLM creep into the decision.** If you ever see extract.ts
+  returning a tier, severity, or "recommendation", stop and have it fixed. That
+  boundary is the whole pitch.
 
 ---
 

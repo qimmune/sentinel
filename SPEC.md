@@ -20,22 +20,37 @@ The field is already moving outpatient. What's missing is the monitoring
 layer. Today "outpatient CAR-T" means a nurse calls you, or you drive in daily
 for a neuro exam.
 
-**Sentinel is the agent that watches the patient at home.** It ingests vitals,
-runs the neurotoxicity exam by voice, grades toxicity against the ASTCT
-consensus criteria on every new data point, and escalates to the care team the
-moment a patient crosses a threshold — with the evidence attached.
+**Sentinel is the agent that watches the patient at home.** Every day it calls
+the patient, listens to how they describe their symptoms, combines that with
+their vitals and wearable data, and answers one question:
 
-**Why us — tighter than "we're a CAR-T company":** Q-Immune's QMI platform reads
-protein-interaction networks in living cells to de-risk CAR-T constructs
-*before* they reach a patient. Sentinel grades toxicity *after* infusion.
+> **How worried should we be right now — and what should happen next?**
 
-> **Predict the risk before infusion. Detect it after. Same problem, two ends of
-> the same timeline.**
+Not a diagnosis. A **triage decision**: keep monitoring, call the nurse today,
+or go to the ED now. Every recommendation cites the specific symptoms and
+readings behind it, so a clinician can overrule it in five seconds.
 
-That's the line. It's not "biotech founder does a hackathon" — it's the same
-company closing the loop on the same failure mode from both directions, which is
-exactly the bench-to-bedside-to-bench story Q-Immune already tells. Use it in
-the pitch and in the Q&A.
+**Why us — and this is the whole reason the project is ours to build:**
+
+Q-Immune's QMI platform reads protein-interaction networks in living cells to
+predict which CAR-T products and patients carry the most toxicity risk —
+**before infusion**. Sentinel watches for that risk **after infusion**.
+
+And the two connect directly: **a patient's pre-infusion risk profile sets how
+sensitively Sentinel watches them.** A patient flagged high-risk gets a lower
+escalation threshold — a symptom that's "call us tomorrow" for one patient is
+"come in now" for another.
+
+> **Predict who's at risk before infusion. Tune the monitoring to match. Catch
+> it early after.**
+
+That's not a biotech founder doing a hackathon project. It's the same company
+closing the loop on the same failure mode from both ends — the
+bench-to-bedside-to-bench story Q-Immune already tells, made concrete.
+
+*(In the demo this is one field on the Patient resource — a risk tier that
+shifts thresholds. Cheap to build, and it's the thing that makes the whole
+project ours rather than generic.)*
 
 ---
 
@@ -52,11 +67,73 @@ the pitch and in the Q&A.
 
 ## 3. Clinical logic (this is the moat — get it right)
 
+### The split that makes this defensible
+
+**We do not output a clinical grade. We output a triage decision.** That
+distinction does a lot of work: it's honest about what an 8-hour build can
+claim, it avoids implying we're a diagnostic device, and it matches what
+patients actually do — describe symptoms in their own words, not answer a
+structured exam.
+
+The pipeline has a hard boundary in the middle, and it's the single most
+important design decision in the project:
+
+```
+  patient speaks freely
+        │
+        ▼
+  Deepgram transcript
+        │
+        ▼
+  ┌─────────────────────────┐
+  │ LLM: EXTRACT FEATURES   │   "I've been shaky and I couldn't
+  │ (subjective → structured)│    remember my daughter's name"
+  │                         │        ↓
+  │ NEVER decides urgency   │   { confusion: true, tremor: true,
+  └─────────────────────────┘     wordFinding: true, fever: unknown }
+        │
+        ▼
+  ┌─────────────────────────┐
+  │ RULES: DECIDE TIER      │   deterministic. thresholds derived
+  │ features + vitals       │   from ASTCT criteria. modulated by
+  │ + Q-Immune risk tier    │   the patient's pre-infusion risk.
+  └─────────────────────────┘
+        │
+        ▼
+  ROUTINE · URGENT · EMERGENT   + the exact features that drove it
+```
+
+**The line for the judges:** *"The language model decides what the patient
+said. It never decides how worried to be. That's deterministic, and it's
+derived from the ASTCT consensus criteria."*
+
+This keeps the strongest thing about the original design — no LLM in the
+safety-critical decision — while making voice genuinely central instead of a
+narration layer over a form.
+
+### Escalation tiers
+
+| Tier | Meaning | Example trigger |
+|---|---|---|
+| **ROUTINE** | Log it, keep watching | mild fatigue, stable vitals |
+| **URGENT** | Care team contacts today | temp ≥38 °C; new confusion or word-finding trouble; resting HR trending up |
+| **EMERGENT** | Go in now | any seizure; unarousable/very drowsy; temp ≥38 °C **with** SpO₂ drop or dizziness on standing |
+
+**High-risk patients shift down a tier.** A Q-Immune high-risk patient with a
+ROUTINE feature set gets URGENT. That's the integration, and it's one `if`.
+
+### Where ASTCT still does the work
+
+The consensus criteria stop being the *output* and become the source of **which
+features matter and at what thresholds** — which is the part that's hard to get
+right and that no other team will have. Keep the tables below; they define the
+feature set. The two nuances in §3's callouts still apply and still matter.
+
 **Source of truth:** Lee DW et al., *ASTCT Consensus Grading for Cytokine
 Release Syndrome and Neurologic Toxicity Associated with Immune Effector
 Cells*, Biol Blood Marrow Transplant 2019;25:625–638. The PDF is in the
 Drive folder (`MedPlum x YC/CRS:ICANS.pdf`). Tables 4, 5, 6 are transcribed
-below verbatim-accurate — **build the grader from these, not from memory.**
+below verbatim-accurate — **derive your thresholds from these, not from memory.**
 
 ### ASTCT CRS grading (Table 4)
 Fever (≥38.0 °C, not attributable to another cause) is required for grade 1.
@@ -123,13 +200,13 @@ reach grade 3. Tremors/myoclonus do **not** influence ICANS grade.
 Edge case worth encoding: ICE 0 is grade **3** if the patient is awake with
 global aphasia, but grade **4** if unarousable.
 
-**Honest limitation to name on stage:** the *writing* item can't be scored by
-voice. Sentinel captures it on-screen (finger/stylus) and scores the other 9
-by voice. Judges reward candor about this more than they'd reward hiding it.
+*(Note: the ICE writing item can't be done by voice — one more reason free-text
+symptom triage is the better primary path. Keep ICE as the structured fallback
+only.)*
 
-**The demo money shot:** a patient whose ICE drops 10 → 7 overnight while their
-temp climbs to 38.4 °C, and Sentinel escalates *before* anyone would have
-called them.
+**The demo money shot:** a patient who says "I've been a bit shaky and I
+couldn't remember my daughter's name this morning" while their temp reads 38.4 °C
+— and Sentinel escalates *before* anyone would have called them.
 
 ---
 
@@ -248,15 +325,29 @@ is a line that will land with clinicians and with Cody.
 independently demoable.
 
 ### Tier 1 — must have by ~1:00pm (this alone is a complete demo)
-1. Medplum project seeded with 5 synthetic patients, Day +3 to +12 post-infusion.
+1. Medplum project seeded with 5 synthetic patients, Day +3 to +12 post-infusion,
+   each carrying a **Q-Immune pre-infusion risk tier** (standard / elevated / high).
 2. Vitals entry form → writes FHIR Observations.
-3. Deterministic ASTCT CRS grader (pure TypeScript function, unit-tested).
-4. Clinician cohort board: 5 patients, colored by current grade, sorted by risk.
+3. **`triage(features, vitals, riskTier) → ROUTINE | URGENT | EMERGENT`** — pure
+   deterministic TypeScript, unit-tested, thresholds from §3.
+4. Clinician cohort board: 5 patients, colored by triage tier, worst first.
 
 ### Tier 2 — the differentiator, by ~3:00pm
-5. Voice ICE assessment via Deepgram: app speaks/shows the 5 prompts, patient
-   answers aloud, transcript → structured scoring → QuestionnaireResponse.
-6. ICE → ICANS grade, plotted as a trend.
+5. **Voice symptom check-in via Deepgram.** The agent asks open questions
+   ("How are you feeling today? Any trouble finding words?"), the patient
+   answers in their own words, Deepgram transcribes.
+6. **Feature extraction** from the transcript into the structured symptom set
+   (fever reported, confusion, word-finding difficulty, tremor, headache,
+   dizziness, drowsiness, seizure). Store as a QuestionnaireResponse so it's
+   real FHIR. Then run `triage()` on it.
+7. Show the transcript **next to** the extracted features and the resulting
+   tier — the audit trail is the demo. A clinician can see exactly what the
+   patient said and why the system reacted.
+
+> The 10-point ICE score is still in §3 and is worth keeping as a **structured
+> fallback** if free-text extraction proves flaky — it's a fixed question set
+> with deterministic scoring. Don't build it first; build it only if extraction
+> fights you.
 
 ### Tier 2b — wearable feed, ~30 min (do it right after Tier 2)
 6b. Simulated wearable time series (HR, HRV, resp rate, SpO₂, wrist-temp
@@ -358,39 +449,43 @@ understand*, not what you built.
 ## 8. Demo script (draft — rehearse this)
 
 > "CAR-T cures people. It also puts them in a hospital bed for two weeks,
-> because of two toxicities we know exactly how to grade — we just can't watch
-> for them at home.
+> because of two toxicities we know how to recognize — we just can't watch for
+> them at home.
 >
 > This is Maria. Day 6 after infusion, at home. Every morning Sentinel calls
-> her. *[play voice check-in — Sentinel asks the ICE questions, Maria answers,
-> score appears live: 10/10]*
->
-> Her nurse sees this. *[cohort board — five patients, all green]*
+> her and just asks how she's doing. *[voice check-in plays — she says she
+> slept fine, feels okay]* Nothing to act on. *[cohort board, all green]*
 >
 > Now it's 2am on day 7. Maria is asleep. *[wearable chart]* Her resting heart
 > rate has climbed 18 beats over six hours and her HRV is falling. That's not a
-> diagnosis — a watch can't grade CRS, it has no blood pressure and it can't
-> read a core temperature. But it's enough to know something is changing.
+> diagnosis — a watch has no blood pressure and can't read a core temperature.
+> But it's enough to know something is changing.
 >
-> So Sentinel doesn't wait for tomorrow morning. *[agent triggers check-in]* It
-> calls her. Her ICE score comes back 7, down from 10. It asks her to take her
-> temperature: 38.4.
+> So Sentinel doesn't wait for morning. *[agent triggers check-in]* It calls her.
 >
-> *Now* it has gradeable data. CRS grade 1, ICANS grade 1 — and it pages the
-> on-call team with the vitals, the transcript, and the grading rationale
-> attached. *[escalation appears, Maria goes amber]*
+> *[play the audio]* She says: **'I've been a bit shaky, and this morning I
+> couldn't remember my daughter's name.'**
 >
-> Note what happened: the watch decided *when* to ask. The exam produced the
-> criteria. The grading is deterministic ASTCT logic — we don't let a language
-> model decide if you have grade 3 CRS.
+> Watch what happens to that sentence. *[transcript → features panel]* The
+> language model pulls out three things: new tremor, word-finding difficulty,
+> confusion. Then it asks her to take her temperature — 38.4.
+>
+> And here's the part that matters: **the model doesn't decide what to do
+> next.** Those features go into deterministic rules derived from the ASTCT
+> consensus criteria. Fever plus new neuro symptoms in a patient Q-Immune
+> flagged as high-risk before infusion — that's EMERGENT.
+> *[escalation fires, Maria goes red, Task lands on the on-call nurse]*
+>
+> The model decides what she said. It never decides how worried to be.
 >
 > That's a patient who gets tocilizumab this afternoon instead of an ICU bed
 > tomorrow. In a published series, catching CRS that early kept 15 of 35
 > patients out of the hospital entirely.
 >
-> We're Q-Immune. We build safer immunotherapies. Safer products are what let
-> CAR-T leave the hospital — and this is the layer that has to exist when it
-> does."
+> We're Q-Immune. Our platform reads protein networks in living cells to predict
+> which patients carry the most toxicity risk — before infusion. This is the
+> other half: it takes that prediction and decides how closely to watch them
+> after. Predict who's at risk, tune the monitoring, catch it early."
 
 ---
 

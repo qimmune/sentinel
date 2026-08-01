@@ -4,9 +4,11 @@ Read `../SPEC.md` first. It has the clinical logic, scope tiers, and demo script
 This file is the engineering contract.
 
 ## What this is
-Remote monitoring for **outpatient CAR-T patients**, detecting **CRS** and
-**ICANS** toxicity. Built on Medplum (hosted FHIR) + React/Vite/Mantine +
-Deepgram (voice). One-day hackathon build, Aug 1 2026, deadline 5:00pm.
+Remote monitoring for **outpatient CAR-T patients**. The agent calls the
+patient, listens to how they describe their symptoms, combines that with vitals
+and wearable trends, and produces an **escalation triage decision** —
+ROUTINE / URGENT / EMERGENT — not a clinical grade. Built on Medplum (hosted
+FHIR) + React/Vite/Mantine + Deepgram (voice). One-day build, deadline 5:00pm.
 
 ## Stack (already installed and verified)
 - Node 26.5.1 via Homebrew, npm 11.17
@@ -17,33 +19,43 @@ Deepgram (voice). One-day hackathon build, Aug 1 2026, deadline 5:00pm.
 
 ## Non-negotiable design rules
 
-1. **Clinical grading is deterministic TypeScript. Never an LLM call.**
-   Put it in `src/clinical/` as pure functions with no I/O:
-   - `gradeCRS(vitals, { antipyreticOrTociWithin6h }): 0|1|2|3|4`
-   - `scoreICE(answers): number` (0–10)
-   - `gradeICANS(iceScore, { consciousness, seizure, motor, icp }): 0|1|2|3|4`
-   These must be unit-testable and have zero React/Medplum imports. The LLM
-   only turns speech into structured answers.
+1. **The LLM extracts. Rules decide. This boundary is the whole project.**
 
-   **Build these from SPEC.md §3, which is transcribed from the actual ASTCT
-   consensus paper (full text in `../reference/`). Do not grade from memory.**
-   Two rules that are easy to get wrong and are both encoded in §3:
-   - CRS: fever is **not** required once the patient has had an antipyretic or
-     tocilizumab — grade on hypotension/hypoxia alone. Outpatients take Tylenol,
-     so a fever-gated grader silently misses the patients that matter most.
-   - ICANS: the grade is the **max across five domains**, not the ICE score alone.
+   We output a **triage tier**, not a clinical grade. See SPEC.md §3 for the
+   full diagram. Two separate layers, and they must stay separate:
 
-   Write the unit tests for both of these edge cases first.
+   - `src/voice/extract.ts` — LLM turns a free-text transcript into a
+     structured `SymptomFeatures` object. **It never returns a tier, a grade, a
+     severity, or a recommendation.** If it does, that's a bug.
+   - `src/clinical/triage.ts` — pure deterministic TypeScript:
+     `triage(features, vitals, riskTier): 'ROUTINE' | 'URGENT' | 'EMERGENT'`
+     No I/O, no React, no Medplum imports, no LLM calls. Fully unit-tested.
 
-2. **Everything persists as real FHIR.** No app-specific database, no
-   localStorage as source of truth. Observations for vitals,
-   QuestionnaireResponse for ICE, RiskAssessment for computed grades, Flag +
-   Task for escalations. Use the LOINC codes in SPEC.md §4.
+   Thresholds come from SPEC.md §3, which is transcribed from the actual ASTCT
+   consensus paper (full text in `../reference/`). **Do not derive them from
+   memory.** Two rules that are easy to get wrong:
+   - Fever is **not** required once the patient has had an antipyretic or
+     tocilizumab — escalate on hypotension/hypoxia alone. Outpatients take
+     Tylenol, so a fever-gated rule silently misses the patients that matter most.
+   - Neuro severity is the **worst of several domains** (confusion, consciousness,
+     seizure, motor), never a single signal.
 
-3. **Build in tier order (SPEC.md §5).** Tier 1 complete and polished beats
+   Write unit tests for both edge cases **first**, before any UI.
+
+2. **Q-Immune risk tier modulates the thresholds.** Every Patient carries a
+   pre-infusion risk tier (`standard | elevated | high`). A `high` patient
+   escalates one tier sooner. This is one `if` — and it's the thing that makes
+   the project Q-Immune's rather than generic. Don't skip it.
+
+3. **Everything persists as real FHIR.** No app-specific database, no
+   localStorage as source of truth. Observations for vitals and wearable data,
+   QuestionnaireResponse for the extracted symptom features, RiskAssessment for
+   the computed triage tier, Flag + Task for escalations. LOINC codes in §4.
+
+4. **Build in tier order (SPEC.md §5).** Tier 1 complete and polished beats
    Tier 3 half-broken. Every tier must be independently demoable.
 
-4. **Synthetic data only.** Five patients, Day +3 to +12 post-infusion. No real
+5. **Synthetic data only.** Five patients, Day +3 to +12 post-infusion. No real
    PHI ever, no HIPAA claims in the UI or the pitch.
 
 ## Env vars
@@ -70,14 +82,19 @@ work landing on a named clinician rather than a placeholder.
 ## Suggested layout
 ```
 src/
-  clinical/          ← pure grading logic, no imports from react/medplum
-    crs.ts  ice.ts  icans.ts  *.test.ts
+  clinical/          ← deterministic rules only. no react/medplum/LLM imports
+    triage.ts        ← triage(features, vitals, riskTier) -> tier
+    thresholds.ts    ← ASTCT-derived constants
+    triage.test.ts   ← write this FIRST
+  voice/
+    capture.ts       ← browser mic -> Deepgram
+    extract.ts       ← transcript -> SymptomFeatures (LLM). returns NO tier.
+    features.ts      ← the SymptomFeatures type
   fhir/              ← FHIR read/write helpers, LOINC constants, seed script
-  voice/             ← Deepgram capture + transcript → structured answers
   pages/
-    ClinicianDashboard.tsx   ← cohort triage board
-    PatientDetail.tsx        ← vitals + ICE trends, escalation timeline
-    CheckIn.tsx              ← patient-facing daily check-in
+    ClinicianDashboard.tsx   ← cohort board, colored by triage tier
+    PatientDetail.tsx        ← vitals + wearable trends, escalation timeline
+    CheckIn.tsx              ← patient voice check-in + transcript/features panel
 ```
 
 The cloned starter's demo pages under `src/pages/` are scaffolding — replace
@@ -95,8 +112,8 @@ Directly relevant to our tiers:
 
 | Need | Look at |
 |---|---|
-| Tier 2 — ICE questionnaire UI + scoring hooks | `medplum-link/examples/medplum-questionnaire-hooks` |
-| Tier 3 — the grading Bot | `medplum-link/examples/medplum-demo-bots` |
+| Tier 2 — storing symptom features as FHIR | `medplum-link/examples/medplum-questionnaire-hooks` |
+| Tier 3 — the triage Bot | `medplum-link/examples/medplum-demo-bots` |
 | Tier 3 — Subscriptions firing on new data | `medplum-link/examples/medplum-websocket-subscriptions-demo` |
 | Tier 3 — escalation Tasks | `medplum-link/examples/medplum-task-demo` |
 | General clinical workflow / dashboard patterns | `medplum-link/examples/medplum-provider` |
@@ -107,9 +124,10 @@ and produce plausible-but-wrong code." Check generated FHIR against
 `@medplum/fhirtypes` — if it type-checks, the resource shape is probably right.
 
 ## Known gotchas
-- The ICE **writing** item cannot be scored by voice. Capture it on-screen.
-  This is a known, disclosed limitation — see SPEC.md §3.
+- If free-text feature extraction proves flaky, fall back to the structured
+  10-point ICE question set in SPEC.md §3 — fixed questions, deterministic
+  scoring. Don't build it first; it's the safety net, not the plan.
 - Medplum Bots need a deployed Bot resource + a Subscription with a criteria
-  string. If this fights you past ~30 min, run the identical grading function
+  string. If this fights you past ~30 min, run the identical triage function
   client-side. Same demo, less risk.
 - Vite is pinned to port 3000; Medplum OAuth redirect URIs must match exactly.
