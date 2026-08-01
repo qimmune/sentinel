@@ -235,67 +235,48 @@ couldn't remember my daughter's name this morning" while their temp reads 38.4 �
 
 ---
 
-## 3b. Wearables — passive sensing as the *trigger*, not the grader
+## 3b. Where the continuous data comes from
 
-**Be precise about this or a clinician judge will take it apart.** Match what a
-watch actually measures against what ASTCT grading actually needs:
+**For the build: a simulated vitals stream. Full stop.** A scripted time series
+of temperature, heart rate, blood pressure and SpO₂ written into FHIR
+Observations, labelled "simulated" in the UI. It needs no device, no HealthKit,
+no permissions, and nobody at a hackathon expects otherwise.
 
-| ASTCT needs | Apple Watch | Verdict |
-|---|---|---|
-| Temp ≥38 °C (core) | wrist temp — *overnight only*, reported as **deviation from personal baseline**, not core °C | ⚠️ trend signal only, **cannot** satisfy the fever criterion |
-| Hypotension | **no blood pressure at all** | ❌ needs a paired BP cuff |
-| Hypoxia / SpO₂ | blood oxygen (spot + background) | ✅ usable |
-| — | HR, HRV, respiratory rate | ✅ strong early-warning signals; not in the grading table |
+This is not a compromise — **the demo is identical either way.** What matters is
+that the agent sees a *trend* and acts on it. Where the numbers originate is a
+production detail.
 
-So the honest and *stronger* framing is:
+**Say this one sentence on stage and move on:** *"This is simulated data today;
+in production it streams from a wearable or a home BP cuff."* That's it. Don't
+build it, don't demo a watch, don't depend on a device you may not have.
 
-> **The watch doesn't grade. The watch decides when to ask.**
+<details>
+<summary>Stretch only — real wearable data (do not attempt before Tier 3 is done)</summary>
 
-Passive signals (rising resting HR, falling HRV, elevated wrist-temp deviation,
-rising respiratory rate) are exactly the physiology that moves *hours before* a
-patient feels sick enough to report — but none of them are gradeable criteria.
-So they trigger the active assessment that produces gradeable data:
+If everything else is finished and you want the "this is my real data" line:
 
-```
-passive wearable drift  →  agent initiates voice check-in early
-                        →  ICE score (ICANS) + "take your temp and BP now"
-                        →  deterministic ASTCT grade on real criteria
-                        →  escalate with the full trail
-```
+- Apple Health → profile → Export All Health Data → `export.xml`. The file runs
+  to hundreds of MB, so **never parse it live** — flatten 48h of HR/HRV into
+  `src/wearable_seed_data.json` first and `JSON.parse()` that.
+- HealthKit proper needs a native iOS app and a real device. Not a one-day job.
+- What a watch can and can't do, if a judge asks: HR, HRV, respiratory rate and
+  SpO₂ are solid; **there is no blood pressure at all**, and wrist temperature is
+  an overnight deviation from personal baseline, not a core °C reading. So a
+  watch could never satisfy the ASTCT fever or hypotension criteria on its own —
+  it's a trigger to go measure properly, which is exactly how the agent uses the
+  vitals trend today.
 
-This is a **better** agentic story than a fixed daily check-in: the agent
-decides *when* to intervene based on continuous data, rather than waiting for a
-scheduled slot. It also closes the honest gap in the pitch — resting HR climbing
-at 2am is precisely the signal a once-daily nurse call misses.
-
-**How to demo it in one day.** HealthKit needs a native iOS app + a real device
-(it doesn't work meaningfully in the simulator) — that is a bad trade for a
-hackathon. Two viable paths, in order of preference:
-
-1. **Simulated wearable feed** *(recommended)* — a scripted time series
-   replaying a real deterioration curve into FHIR Observations. Label it
-   "simulated" in the UI. Judges accept this without blinking; nobody expects a
-   device integration in 8 hours.
-2. **Apple Health export** *(nice bonus, ~30 min)* — on your iPhone, Health app
-   → profile → Export All Health Data → `export.xml`. Parse it and seed real
-   HR/HRV/respiratory-rate history for one patient. No native app required, and
-   "this is my actual watch data" is a genuinely good line on stage.
-
-Do #2 tonight if you have 10 minutes — start the export before bed, it's slow.
-
-Both land in FHIR the same way, so the app can't tell the difference:
-resting HR `40443-4` · HRV SDNN `80404-7` · respiratory rate `9279-1` ·
-body temp delta `8310-5` (use a `Component` for baseline deviation) · SpO₂ `59408-5`.
+</details>
 
 ## 4. Architecture
 
 ```
-Wearable feed (simulated /            Clinician dashboard
-  Apple Health export)                  ├── cohort triage board
-  HR · HRV · resp rate · SpO2           │     (green / amber / red)
-  · wrist temp deviation                └── patient drill-down:
-             │                                wearable + vitals trends,
-             │  drift detected                ICE trend, escalation
+Simulated vitals stream               Clinician dashboard
+  temp · HR · BP · SpO2                 ├── cohort triage board
+  (scripted time series,                │     (green / amber / red)
+   labelled "simulated")                └── patient drill-down:
+             │                                vitals trends, symptom
+             │  drift detected                history, escalation
              ▼  → agent initiates             timeline
 Patient PWA (phone)                             ▲
   ├── voice check-in (ICE) ─┐                   │
@@ -363,6 +344,12 @@ independently demoable.
    deterministic TypeScript, unit-tested, thresholds from §3.
 4. Clinician cohort board: 5 patients, colored by triage tier, worst first.
 
+### Tier 1b — the vitals stream, ~20 min (right after Tier 1)
+4b. A scripted time series of temp / HR / BP / SpO₂ per patient written as FHIR
+    Observations, plotted on the patient detail page and labelled **simulated**.
+    For Maria, script an overnight drift on day 7 — temp and HR climbing — since
+    that's what the agent reacts to in the demo. Pure synthetic data, no device.
+
 ### Tier 2 — the differentiator, by ~3:00pm
 5. **Voice symptom check-in via Deepgram.** The agent asks open questions
    ("How are you feeling today? Any trouble finding words?"), the patient
@@ -380,29 +367,22 @@ independently demoable.
 > with deterministic scoring. Don't build it first; build it only if extraction
 > fights you.
 
-### Tier 2b — wearable feed, ~30 min (do it right after Tier 2)
-6b. Wearable time series (HR, HRV, resp rate, SpO₂) streaming into FHIR
-    Observations, plotted on the patient drill-down. Cheap, and it's what makes
-    the escalation *look* continuous rather than form-driven. See §3b.
-
-    **Load `src/wearable_seed_data.json`, pre-baked last night.** Do not parse
-    an Apple Health `export.xml` at the venue — those files run to hundreds of
-    MB and you will lose an hour to it. If the pre-bake didn't happen, use
-    scripted synthetic values and move on; nobody expects a device integration
-    in 8 hours.
-
 ### Tier 3 — the "agentic" proof, by ~4:00pm
 7. Medplum Bot + Subscription: fires on every new Observation/QuestionnaireResponse,
    re-runs `triage()`, writes a RiskAssessment with the tier, and raises Flag +
    Task when the tier worsens.
-8. **Wearable drift → agent initiates an off-schedule check-in.** This is the
-   money feature: the Bot sees resting HR climbing + HRV falling, and *triggers
-   the voice assessment on its own* rather than waiting for tomorrow's slot.
-   That's the difference between a form and an agent — build this before #9.
+8. **Vitals drift → agent initiates an off-schedule check-in.** This is the
+   money feature: the Bot sees temp and heart rate climbing overnight and
+   *triggers the voice check-in on its own* rather than waiting for tomorrow's
+   slot. That's the difference between a form and an agent — build this before #9.
 9. Escalation timeline on the patient drill-down.
 
-### Tier 4 — only if time remains
-10. Draft escalation note for the care team, LLM-generated from the structured data.
+### Stretch — only if Tier 3 is finished, committed, and demoable
+**Do not start any of these before 3:30, and not at all if anything above is
+shaky.** A polished Tier 1–3 beats a half-finished stretch goal every time.
+
+10. Real Apple Health data replacing the simulated stream (see §3b — pre-baked
+    JSON only, never live XML parsing).
 11. Speech *latency* as a signal — Deepgram returns word-level timestamps, and
     slowed/hesitant speech is a real neurotoxicity sign. Genuinely novel and the
     most Deepgram-native feature available. Tier 4 only — do not promise it in
@@ -484,10 +464,12 @@ understand*, not what you built.
 > her and just asks how she's doing. *[voice check-in plays — she says she
 > slept fine, feels okay]* Nothing to act on. *[cohort board, all green]*
 >
-> Now it's 2am on day 7. Maria is asleep. *[wearable chart]* Her resting heart
-> rate has climbed 18 beats over six hours and her HRV is falling. That's not a
-> diagnosis — a watch has no blood pressure and can't read a core temperature.
-> But it's enough to know something is changing.
+> Now it's 2am on day 7. Maria is asleep. *[vitals chart]* Her temperature and
+> heart rate have been climbing for six hours. That's not a diagnosis on its
+> own — but it's enough to know something is changing.
+>
+> *(If asked: this is simulated data today; in production it streams from a
+> wearable or a home cuff.)*
 >
 > So Sentinel doesn't wait for morning. *[agent triggers check-in]* It calls her.
 >

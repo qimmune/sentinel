@@ -48,12 +48,8 @@ properly: **Project Admin → Clients → New Client**, redirect URI
 Then:
 1. **Read SPEC.md §3 (clinical logic) and §8 (demo script).** You are the
    domain expert on this team — that's your edge, not the code.
-2. **Pre-bake the wearable data — do this tonight, not tomorrow.** An Apple
-   Health `export.xml` is hundreds of MB; parsing it at the venue will cost you
-   an hour. Export it now, then have Claude Code flatten 48 hours of heart rate
-   and HRV into a flat array at `app/src/wearable_seed_data.json` so tomorrow is
-   just `JSON.parse()`. *If the export is too slow or you skip it, no problem —
-   scripted synthetic values demo identically.*
+2. **Skip the Apple Health export.** We're building on synthetic data. Real
+   watch data is a stretch goal only — see SPEC.md §3b. Don't spend tonight on it.
 3. Charge laptop. Pack charger, **headphones with a mic** (you're demoing
    voice in a loud room — this matters more than it sounds), phone.
 
@@ -73,9 +69,11 @@ Then at the venue:
 | 10:15 | **Spike the Deepgram mic → transcript pipeline first.** Timebox 90 min. It's the only real unknown. |
 | 10:15 | In parallel: Claude Code builds Tier 1 (seed data, vitals, `triage()` + tests, cohort board). |
 | 12:30 | Lunch. **Tier 1 must be demoable by now.** If Deepgram isn't working, cut to typed input and move on. |
+| 12:45 | Tier 1b — simulated vitals stream (20 min). |
 | 1:00 | Tier 2 — voice check-in, feature extraction, triage side-by-side panel. |
 | 3:00 | **Go to Deepgram office hours** even if things work. Two of six judges are Deepgram; being memorable to them is worth 20 minutes. |
 | 3:00 | Tier 3 — Medplum Bot + agent-triggered check-in + LLM handover note. Ask Medplum staff directly. |
+| 3:30 | **Stretch goals only if Tier 3 is done and committed.** Otherwise: polish. |
 | 4:00 | **Feature freeze.** Whatever works, works. |
 | 4:30 | **Record the 2-minute demo video.** Non-negotiable. |
 | 4:45 | Submit the Google Form — don't wait until 4:59. |

@@ -6,7 +6,7 @@ This file is the engineering contract.
 ## What this is
 Remote monitoring for **outpatient CAR-T patients**. The agent calls the
 patient, listens to how they describe their symptoms, combines that with vitals
-and wearable trends, and produces an **escalation triage decision** —
+and a simulated vitals trend, and produces an **escalation triage decision** —
 ROUTINE / URGENT / EMERGENT — not a clinical grade. Built on Medplum (hosted
 FHIR) + React/Vite/Mantine + Deepgram (voice). One-day build, deadline 5:00pm.
 
@@ -48,15 +48,18 @@ FHIR) + React/Vite/Mantine + Deepgram (voice). One-day build, deadline 5:00pm.
    the project Q-Immune's rather than generic. Don't skip it.
 
 3. **Everything persists as real FHIR.** No app-specific database, no
-   localStorage as source of truth. Observations for vitals and wearable data,
+   localStorage as source of truth. Observations for vitals (simulated stream),
    QuestionnaireResponse for the extracted symptom features, RiskAssessment for
    the computed triage tier, Flag + Task for escalations. LOINC codes in §4.
 
 4. **Build in tier order (SPEC.md §5).** Tier 1 complete and polished beats
    Tier 3 half-broken. Every tier must be independently demoable.
 
-5. **Synthetic data only.** Five patients, Day +3 to +12 post-infusion. No real
-   PHI ever, no HIPAA claims in the UI or the pitch.
+5. **Synthetic data only — this is the plan, not a fallback.** Five patients,
+   Day +3 to +12 post-infusion, with a scripted vitals time series. No device
+   integrations, no HealthKit, no Apple Health XML. Real wearable data is a
+   stretch goal gated behind a finished Tier 3 (SPEC.md §3b). No real PHI ever,
+   no HIPAA claims in the UI or the pitch.
 
 ## Env vars
 `.env` is gitignored and auto-created from `.env.defaults` on first `vite` run.
@@ -93,7 +96,7 @@ src/
   fhir/              ← FHIR read/write helpers, LOINC constants, seed script
   pages/
     ClinicianDashboard.tsx   ← cohort board, colored by triage tier
-    PatientDetail.tsx        ← vitals + wearable trends, escalation timeline
+    PatientDetail.tsx        ← vitals trends, symptom history, escalation timeline
     CheckIn.tsx              ← patient voice check-in + transcript/features panel
 ```
 

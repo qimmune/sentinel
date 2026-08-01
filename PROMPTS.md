@@ -96,13 +96,17 @@ Then, only once transcription works:
 
 ---
 
-## Tier 2b — wearable feed
+## Tier 1b — the vitals stream
 
-> Build Tier 2b: a simulated wearable feed. A scripted time series of resting
-> HR, HRV, respiratory rate and SpO2 writing into FHIR Observations, plotted on
-> the patient detail page. Label it "simulated" in the UI. For Maria, script a
-> deterioration curve overnight on day 7 — HR climbing, HRV falling — because
-> that's the demo moment.
+> Build Tier 1b: a simulated vitals stream. A scripted time series of
+> temperature, heart rate, blood pressure and SpO2 per patient, written as FHIR
+> Observations and plotted on the patient detail page. Label it "simulated" in
+> the UI.
+>
+> For Maria, script an overnight drift on day 7 — temperature and heart rate
+> climbing — because that's what the agent reacts to in the demo.
+>
+> Pure synthetic data. No device integration, no HealthKit, no file parsing.
 
 ---
 
@@ -117,7 +121,7 @@ Then, only once transcription works:
 > and a Task owned by Practitioner/202cc49d-e87e-43a7-b03d-53c938460ea2.
 >
 > Then — only after the tier is already decided — have the LLM synthesize the
-> transcript plus the vitals/wearable delta into a 2-sentence clinical handover
+> transcript plus the vitals trend into a 2-sentence clinical handover
 > note, saved on a Communication resource. Label it clearly as AI-drafted. The
 > note explains the decision; it must never influence it.
 >
@@ -126,9 +130,9 @@ Then, only once transcription works:
 
 Then the money feature:
 
-> Now make the agent decide when to ask. When the wearable feed shows rising
-> resting HR and falling HRV, the Bot should create a FHIR Task for the patient
-> with status 'requested'. Have the React app poll for that Task and pop an
+> Now make the agent decide when to ask. When the vitals stream shows
+> temperature and heart rate climbing overnight, the Bot should create a FHIR
+> Task for the patient with status 'requested'. Have the React app poll for that Task and pop an
 > "Incoming check-in from your care team" overlay when it appears.
 >
 > This is the most important feature of the demo — make it big and obvious on
