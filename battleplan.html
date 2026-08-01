@@ -1,0 +1,585 @@
+<title>Sentinel — Hackathon Battle Plan</title>
+<style>
+  :root {
+    --ground: #f7f9fa;
+    --surface: #ffffff;
+    --ink: #0f1519;
+    --ink-2: #46545f;
+    --ink-3: #78878f;
+    --rule: #dde4e8;
+    --rule-2: #eef2f4;
+    --accent: #0a6b84;
+    --accent-soft: #e2f0f4;
+    --ok: #1f7a52;
+    --ok-soft: #e2f1ea;
+    --warn: #9a5f04;
+    --warn-soft: #f8eeda;
+    --crit: #a83226;
+    --crit-soft: #f8e6e3;
+    --shadow: 0 1px 2px rgba(15,21,25,.05), 0 1px 12px rgba(15,21,25,.04);
+
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --serif: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0d1417;
+      --surface: #141d21;
+      --ink: #e8eef1;
+      --ink-2: #a3b1b9;
+      --ink-3: #71828b;
+      --rule: #253238;
+      --rule-2: #1b262b;
+      --accent: #52b8d4;
+      --accent-soft: #12313b;
+      --ok: #5cc292;
+      --ok-soft: #102c21;
+      --warn: #dda23c;
+      --warn-soft: #2f2410;
+      --crit: #e57b6c;
+      --crit-soft: #331916;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 1px 12px rgba(0,0,0,.2);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0d1417;
+    --surface: #141d21;
+    --ink: #e8eef1;
+    --ink-2: #a3b1b9;
+    --ink-3: #71828b;
+    --rule: #253238;
+    --rule-2: #1b262b;
+    --accent: #52b8d4;
+    --accent-soft: #12313b;
+    --ok: #5cc292;
+    --ok-soft: #102c21;
+    --warn: #dda23c;
+    --warn-soft: #2f2410;
+    --crit: #e57b6c;
+    --crit-soft: #331916;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 1px 12px rgba(0,0,0,.2);
+  }
+  :root[data-theme="light"] {
+    --ground: #f7f9fa;
+    --surface: #ffffff;
+    --ink: #0f1519;
+    --ink-2: #46545f;
+    --ink-3: #78878f;
+    --rule: #dde4e8;
+    --rule-2: #eef2f4;
+    --accent: #0a6b84;
+    --accent-soft: #e2f0f4;
+    --ok: #1f7a52;
+    --ok-soft: #e2f1ea;
+    --warn: #9a5f04;
+    --warn-soft: #f8eeda;
+    --crit: #a83226;
+    --crit-soft: #f8e6e3;
+    --shadow: 0 1px 2px rgba(15,21,25,.05), 0 1px 12px rgba(15,21,25,.04);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 2rem 1.15rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.75rem;
+  }
+
+  /* ---------- masthead ---------- */
+  .mast { display: flex; flex-direction: column; gap: .5rem; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    line-height: 1.08;
+    letter-spacing: -.025em;
+    margin: 0;
+    text-wrap: balance;
+    font-weight: 660;
+  }
+  .dek {
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 34rem;
+    text-wrap: pretty;
+  }
+  .mast-meta {
+    font-family: var(--mono);
+    font-size: .74rem;
+    color: var(--ink-3);
+    letter-spacing: .02em;
+    padding-top: .6rem;
+    border-top: 1px solid var(--rule);
+    margin-top: .35rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- sections ---------- */
+  section { display: flex; flex-direction: column; gap: 1rem; }
+  h2 {
+    font-size: 1.16rem;
+    letter-spacing: -.01em;
+    margin: 0;
+    font-weight: 640;
+    display: flex;
+    align-items: baseline;
+    gap: .6rem;
+  }
+  h2 .n {
+    font-family: var(--mono);
+    font-size: .72rem;
+    color: var(--ink-3);
+    letter-spacing: .08em;
+    font-weight: 500;
+  }
+  h3 {
+    font-size: .78rem;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--ink-3);
+    margin: 0;
+    font-weight: 500;
+  }
+  p { margin: 0; text-wrap: pretty; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  /* ---------- status list ---------- */
+  .status { display: flex; flex-direction: column; gap: 0; }
+  .row {
+    display: grid;
+    grid-template-columns: 4.6rem 1fr;
+    gap: .1rem .8rem;
+    padding: .7rem 0;
+    border-bottom: 1px solid var(--rule-2);
+    align-items: start;
+  }
+  .row:first-child { border-top: 1px solid var(--rule); }
+  .chip {
+    font-family: var(--mono);
+    font-size: .63rem;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: .2rem .4rem;
+    border-radius: 2px;
+    text-align: center;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-top: .12rem;
+  }
+  .chip.done { background: var(--ok-soft); color: var(--ok); }
+  .chip.todo { background: var(--warn-soft); color: var(--warn); }
+  .chip.opt  { background: var(--rule-2); color: var(--ink-3); }
+  .row .what { font-weight: 550; }
+  .row .why { grid-column: 2; color: var(--ink-2); font-size: .89rem; }
+
+  /* ---------- callout ---------- */
+  .call {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: .9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    box-shadow: var(--shadow);
+  }
+  .call.crit { border-left-color: var(--crit); }
+  .call.warn { border-left-color: var(--warn); }
+  .call .lbl {
+    font-family: var(--mono);
+    font-size: .66rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .call.crit .lbl { color: var(--crit); }
+  .call.warn .lbl { color: var(--warn); }
+  .call p { font-size: .92rem; color: var(--ink-2); }
+  .call strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- schedule ---------- */
+  .sched { display: flex; flex-direction: column; }
+  .slot {
+    display: grid;
+    grid-template-columns: 3.9rem 1fr;
+    gap: .8rem;
+    padding: .85rem 0;
+    border-bottom: 1px solid var(--rule-2);
+  }
+  .slot:first-child { border-top: 1px solid var(--rule); }
+  .time {
+    font-family: var(--mono);
+    font-size: .78rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    letter-spacing: -.01em;
+    padding-top: .12rem;
+  }
+  .slot.key .time { color: var(--accent); font-weight: 600; }
+  .slot.key .act { font-weight: 620; }
+  .act { display: flex; flex-direction: column; gap: .28rem; }
+  .act .sub { font-size: .87rem; color: var(--ink-2); }
+
+  /* ---------- tiers ---------- */
+  .tiers { display: flex; flex-direction: column; gap: .55rem; }
+  .tier {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+  .tier-head {
+    display: flex;
+    align-items: baseline;
+    gap: .55rem;
+    flex-wrap: wrap;
+  }
+  .tier-n {
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .08em;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .tier-t { font-weight: 600; font-size: .97rem; }
+  .tier-by {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+  }
+  .tier p { font-size: .89rem; color: var(--ink-2); }
+
+  /* ---------- demo script ---------- */
+  .script {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1.15rem 1.15rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    box-shadow: var(--shadow);
+  }
+  .beat { display: flex; flex-direction: column; gap: .3rem; }
+  .stage {
+    font-family: var(--mono);
+    font-size: .66rem;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .say {
+    font-family: var(--serif);
+    font-size: 1.06rem;
+    line-height: 1.5;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+  .say em { color: var(--accent); font-style: italic; }
+
+  /* ---------- fallback table ---------- */
+  .fb { display: flex; flex-direction: column; }
+  .fb-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .3rem 1rem;
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--rule-2);
+  }
+  .fb-row:first-child { border-top: 1px solid var(--rule); }
+  .fb-if { font-size: .9rem; font-weight: 550; }
+  .fb-then { font-size: .9rem; color: var(--ink-2); }
+  .fb-then::before {
+    content: "→ ";
+    color: var(--crit);
+    font-family: var(--mono);
+  }
+  @media (max-width: 30rem) {
+    .fb-row { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 4.3rem 1fr; }
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: .84em;
+    background: var(--rule-2);
+    padding: .1em .34em;
+    border-radius: 2px;
+  }
+  .cmd {
+    font-family: var(--mono);
+    font-size: .82rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .7rem .85rem;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--ink);
+  }
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1rem;
+    font-size: .84rem;
+    color: var(--ink-3);
+    text-wrap: pretty;
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <div class="eyebrow">YC × Medplum Hackathon</div>
+    <h1>Sentinel</h1>
+    <p class="dek">The agentic safety net for outpatient CAR&#8209;T. It calls the patient, listens, and decides how worried to be — so recovery can happen at home instead of a hospital bed.</p>
+    <div class="mast-meta">SAT 01 AUG 2026 · Y COMBINATOR SF · SUBMIT BY 17:00</div>
+  </header>
+
+  <section>
+    <h2><span class="n">01</span> Where we stand tonight</h2>
+    <div class="status">
+      <div class="row">
+        <span class="chip done">Ready</span>
+        <span class="what">Machine set up</span>
+        <span class="why">You had no Node.js at all — that would have eaten your first hour. Installed and verified.</span>
+      </div>
+      <div class="row">
+        <span class="chip done">Ready</span>
+        <span class="what">App runs</span>
+        <span class="why">Medplum starter cloned, dependencies installed, dev server serving on localhost:3000.</span>
+      </div>
+      <div class="row">
+        <span class="chip done">Ready</span>
+        <span class="what">Medplum sign-in works</span>
+        <span class="why">You confirmed it yourself. No client ID needed — email and password is enough.</span>
+      </div>
+      <div class="row">
+        <span class="chip done">Ready</span>
+        <span class="what">Deepgram key live</span>
+        <span class="why">Pulled from your Drive and authenticated against their API — confirmed valid, not just present.</span>
+      </div>
+      <div class="row">
+        <span class="chip done">Ready</span>
+        <span class="what">Clinical logic verified</span>
+        <span class="why">Your Drive PDF turned out to be the actual ASTCT consensus paper. Checking against it caught two grading errors we'd have shipped.</span>
+      </div>
+      <div class="row">
+        <span class="chip done">Ready</span>
+        <span class="what">Medplum source on disk</span>
+        <span class="why">Their whole monorepo, with example apps mapped to our build tiers. Tomorrow we copy working code instead of inventing it.</span>
+      </div>
+      <div class="row">
+        <span class="chip done">Ready</span>
+        <span class="what">Plain-English guide written</span>
+        <span class="why">GUIDE.md — what Medplum and FHIR actually are, and how to verify Claude's work yourself. Read it tonight.</span>
+      </div>
+      <div class="row">
+        <span class="chip done">Ready</span>
+        <span class="what">Synthetic data is the plan</span>
+        <span class="why">No devices, no HealthKit, no file parsing. Apple Watch is a stretch goal gated behind a finished Tier 3.</span>
+      </div>
+      <div class="row">
+        <span class="chip todo">Morning</span>
+        <span class="what">Ask about pre-built scaffolding</span>
+        <span class="why">At the 10:00 opening remarks. Two minutes of insurance — see below.</span>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">02</span> The rule that decides everything</h2>
+    <div class="call">
+      <span class="lbl">The boundary</span>
+      <p><strong>The language model decides what the patient said. It never decides how worried to be.</strong> It extracts symptoms into plain true/false fields; deterministic rules derived from the ASTCT consensus criteria pick the tier. If you ever see the model returning a tier or a recommendation, that's a bug — and it's the whole pitch.</p>
+    </div>
+    <p class="dek">And two clinical traps. A strong engineer without your background gets both wrong, and neither is obvious from a summary of the criteria.</p>
+    <div class="call">
+      <span class="lbl">The antipyretic rule</span>
+      <p>Once a patient has taken Tylenol or received tocilizumab, <strong>fever is no longer required</strong> — escalate on blood pressure and oxygen alone. Outpatients medicate at home. A rule that gates on fever would <strong>silently under-triage exactly the patients you most need to catch.</strong></p>
+    </div>
+    <div class="call">
+      <span class="lbl">Neuro severity is a maximum, not a lookup</span>
+      <p>Take the <strong>worst of several domains</strong> — confusion, consciousness, seizure, motor findings — never a single signal. Any reported seizure goes straight to EMERGENT regardless of everything else.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">03</span> What we build, in order</h2>
+    <p class="dek">Every tier is independently demoable. Build in order and stop wherever 4pm finds you — Tier 1 finished and clean beats Tier 3 half-broken.</p>
+    <div class="tiers">
+      <div class="tier">
+        <div class="tier-head">
+          <span class="tier-n">Tier 1</span>
+          <span class="tier-t">Symptoms in, triage out</span>
+          <span class="tier-by">by 12:30</span>
+        </div>
+        <p>Five synthetic patients, days 3–12 post-infusion, each with a Q&#8209;Immune pre-infusion risk tier. The deterministic <code>triage()</code> function with its tests. A clinician board showing the cohort by urgency. <strong>This alone is a complete demo.</strong></p>
+      </div>
+      <div class="tier">
+        <div class="tier-head">
+          <span class="tier-n">Tier 1b</span>
+          <span class="tier-t">Simulated vitals stream</span>
+          <span class="tier-by">+20 min</span>
+        </div>
+        <p>A scripted time series of temperature, heart rate, BP and SpO₂ per patient. Labelled "simulated" on screen. No devices, no file parsing — this is what the agent reacts to.</p>
+      </div>
+      <div class="tier">
+        <div class="tier-head">
+          <span class="tier-n">Tier 2</span>
+          <span class="tier-t">The voice check-in</span>
+          <span class="tier-by">by 15:00</span>
+        </div>
+        <p>Deepgram transcribes the patient describing how they feel. The model pulls out symptoms as plain true/false fields. Then <code>triage()</code> decides. Show all three side by side — <strong>the audit trail is the demo.</strong></p>
+      </div>
+      <div class="tier">
+        <div class="tier-head">
+          <span class="tier-n">Tier 3</span>
+          <span class="tier-t">The agent decides when to ask</span>
+          <span class="tier-by">by 16:00</span>
+        </div>
+        <p>A Medplum Bot re-runs triage on every new reading and raises a flag. Then the money feature: <strong>overnight vitals drift makes the agent start a check-in on its own.</strong> Plus an AI-drafted handover note for the nurse — written after the decision, never part of it.</p>
+      </div>
+      <div class="tier">
+        <div class="tier-head">
+          <span class="tier-n">Stretch</span>
+          <span class="tier-t">Only if Tier 3 is done and committed</span>
+          <span class="tier-by">not before 15:30</span>
+        </div>
+        <p>Real Apple Watch data · speech latency as a neuro signal · the structured ICE fallback. <strong>Don't start any of these if anything above is shaky.</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">04</span> The day</h2>
+    <div class="sched">
+      <div class="slot"><span class="time">09:00</span><span class="act"><span>Breakfast, open the spec</span></span></div>
+      <div class="slot key"><span class="time">10:00</span><span class="act"><span>Opening remarks</span><span class="sub">Ask an organizer whether pre-existing scaffolding is allowed. Almost certainly yes — boilerplate fine, project code not. Ask anyway and build with a clear head.</span></span></div>
+      <div class="slot key"><span class="time">10:15</span><span class="act"><span>Spike the voice pipeline — timebox 90 min</span><span class="sub">The only real unknown in the whole build. Do it before it's on the critical path. Claude Code builds Tier 1 in parallel.</span></span></div>
+      <div class="slot key"><span class="time">12:30</span><span class="act"><span>Lunch — Tier 1 must be demoable</span><span class="sub">If voice isn't working by now, cut to typed input and move on.</span></span></div>
+      <div class="slot"><span class="time">12:45</span><span class="act"><span>Tier 1b — simulated vitals stream (20 min)</span></span></div>
+      <div class="slot"><span class="time">13:00</span><span class="act"><span>Tier 2 — voice check-in and symptom extraction</span></span></div>
+      <div class="slot key"><span class="time">15:00</span><span class="act"><span>Sponsor office hours — go even if nothing is broken</span><span class="sub">Two of six judges are Deepgram. Twenty minutes of being memorable to them is worth more than twenty minutes of code.</span></span></div>
+      <div class="slot"><span class="time">15:00</span><span class="act"><span>Tier 3 — the Bot, the agent-initiated check-in, the handover note</span></span></div>
+      <div class="slot"><span class="time">15:30</span><span class="act"><span>Stretch goals — only if Tier 3 is committed</span><span class="sub">Otherwise polish the red/amber/green states. Polish beats scope.</span></span></div>
+      <div class="slot key"><span class="time">16:00</span><span class="act"><span>Feature freeze</span><span class="sub">Whatever works, works. Nothing new after this.</span></span></div>
+      <div class="slot key"><span class="time">16:30</span><span class="act"><span>Record the demo video</span><span class="sub">Non-negotiable. Two minutes, screen capture. You present the recording and go live only if things look healthy.</span></span></div>
+      <div class="slot"><span class="time">16:45</span><span class="act"><span>Submit the form</span><span class="sub">Not at 16:59.</span></span></div>
+      <div class="slot key"><span class="time">17:00</span><span class="act"><span>Rehearse out loud, three times</span><span class="sub">The highest-return hour of the day. Most teams skip it, and it's the whole difference at 18:00.</span></span></div>
+      <div class="slot"><span class="time">18:00</span><span class="act"><span>Presentations</span></span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">05</span> The demo</h2>
+    <p class="dek">Two minutes. The arc is: vitals drift, the agent asks, the criteria decide, a clinician gets paged.</p>
+    <div class="script">
+      <div class="beat">
+        <div class="stage">Open — no screen yet</div>
+        <p class="say">CAR-T cures people. It also puts them in a hospital bed for two weeks, because of two toxicities we know exactly how to grade — we just can't watch for them at home.</p>
+      </div>
+      <div class="beat">
+        <div class="stage">Play the voice check-in</div>
+        <p class="say">This is Maria, day six after infusion, at home. Every morning Sentinel calls and asks how she's doing. <em>[she says she slept fine, feels okay]</em> Nothing to act on.</p>
+      </div>
+      <div class="beat">
+        <div class="stage">Cohort board — all five green</div>
+        <p class="say">Her nurse sees this.</p>
+      </div>
+      <div class="beat">
+        <div class="stage">Vitals chart</div>
+        <p class="say">Now it's 2am on day seven. Maria is asleep. Her temperature and heart rate have been climbing for six hours. Not a diagnosis on its own — but enough to know something is changing. <em>[if asked: simulated today; in production it streams from a wearable or a home cuff]</em></p>
+      </div>
+      <div class="beat">
+        <div class="stage">Agent triggers the check-in — make this big</div>
+        <p class="say">So Sentinel doesn't wait for morning. It calls her. She says: <em>"I've been a bit shaky, and this morning I couldn't remember my daughter's name."</em> It asks her to take her temperature: 38.4.</p>
+      </div>
+      <div class="beat">
+        <div class="stage">Transcript → features → tier, side by side</div>
+        <p class="say">Watch what happens to that sentence. The model pulls out three things: new tremor, word-finding difficulty, confusion. Those go into deterministic rules — fever plus new neuro symptoms in a patient we flagged high-risk before infusion. That's EMERGENT. <em>[escalation fires, Maria goes red]</em></p>
+      </div>
+      <div class="beat">
+        <div class="stage">Land it</div>
+        <p class="say">And look at the note it sent — the agent pulled her own words together with her overnight vitals and drafted a two-sentence handover, so the nurse gets context, not just an alarm. But the note didn't fire the alarm. The thresholds did. <em>The model decides what she said. It never decides how worried to be.</em></p>
+      </div>
+      <div class="beat">
+        <div class="stage">Close</div>
+        <p class="say">That's a patient who gets tocilizumab this afternoon instead of an ICU bed tomorrow. In a published series, catching it that early kept fifteen of thirty-five patients out of the hospital entirely. We're Q-Immune. Our platform reads protein networks in living cells to predict which patients carry the most toxicity risk — before infusion. This is the other half: it takes that prediction and decides how closely to watch them after.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">06</span> If something breaks</h2>
+    <div class="fb">
+      <div class="fb-row">
+        <span class="fb-if">Live mic streaming is eating the day</span>
+        <span class="fb-then">Record a clip and send it to Deepgram's pre-recorded endpoint. Identical on screen, far more reliable in a loud room. Ask their staff — they're in the room.</span>
+      </div>
+      <div class="fb-row">
+        <span class="fb-if">Medplum Bots won't deploy</span>
+        <span class="fb-then">Run the same triage function in the browser. The demo looks identical. Say so honestly if asked.</span>
+      </div>
+      <div class="fb-row">
+        <span class="fb-if">Live demo fails on stage</span>
+        <span class="fb-then">Play the 16:30 recording. This is why you record it.</span>
+      </div>
+      <div class="fb-row">
+        <span class="fb-if">Someone says "this is only for CAR-T"</span>
+        <span class="fb-then">Same engine grades any protocol-driven toxicity — bispecifics, checkpoint inhibitors, transplant. CAR-T is the wedge because that's where the inpatient cost is highest.</span>
+      </div>
+      <div class="fb-row">
+        <span class="fb-if">"How does a confused patient take their own BP?"</span>
+        <span class="fb-then">The caregiver loop. Answers incoherently → page the caregiver and escalate. Doesn't answer → retry, then caregiver. Silence isn't reassuring, it's unverified.</span>
+      </div>
+      <div class="fb-row">
+        <span class="fb-if">Everything is on fire</span>
+        <span class="fb-then">Ship Tier 1 and tell the story well. Judges score what they understand.</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">07</span> First thing in the morning</h2>
+    <div class="cmd">bash ~/qimmune-hackathon/preflight.sh</div>
+    <p class="dek">Run it before you leave, and again on venue wifi — it re-tests both APIs, which is where conference networks bite. Then open Claude Code in the <code>app</code> folder and work through PROMPTS.md in order. Never used Medplum? GUIDE.md explains it in plain English, including how to check the work yourself.</p>
+    <div class="call warn">
+      <span class="lbl">Your actual job tomorrow</span>
+      <p>Not coding. Three things: <strong>check the thresholds in <code>triage()</code> against the spec</strong> — you're the only person in the room who can catch a wrong number. <strong>Verify data is real</strong> by looking in Medplum after each tier, not taking "done" on faith. And <strong>rehearse the pitch.</strong> Those are the parts that win.</p>
+    </div>
+  </section>
+
+  <footer>
+    Everything here lives in <code>~/qimmune-hackathon</code> — GUIDE.md for plain-English Medplum, SPEC.md for the clinical detail, PROMPTS.md for copy-paste prompts, RUNBOOK.md for the schedule, reference/ for the ASTCT paper offline.
+  </footer>
+
+</div>
