@@ -14,6 +14,8 @@ chk "node installed"            "command -v node"
 chk "npm installed"             "command -v npm"
 chk "deps installed"            "test -d app/node_modules"
 chk "medplum source reference"  "test -d medplum-src/examples"
+chk "vitest installed"          "test -d app/node_modules/vitest"
+chk "tests run clean"           "(cd app && npm test --silent)"
 chk "ASTCT paper offline"       "test -s reference/ASTCT-consensus-grading-Lee-2019.md"
 
 echo

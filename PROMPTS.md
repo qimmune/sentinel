@@ -54,7 +54,9 @@ section 3 again, especially the pipeline diagram" before letting it touch code.
 > standard-risk patient on identical symptoms; (3) any reported seizure going
 > straight to EMERGENT.
 >
-> Show me the tests passing before you build any UI.
+> Show me the tests passing before you build any UI. Vitest is already
+> installed — just run `npm test`. Delete `src/clinical/setup.test.ts` once your
+> real tests exist.
 
 Then, separately:
 

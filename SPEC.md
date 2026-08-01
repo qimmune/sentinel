@@ -217,10 +217,13 @@ A patient with ICE 3 (would be grade 2) who has a generalized seizure is
 | Motor findings | — | — | — | deep focal weakness (hemi-/paraparesis) |
 | Elevated ICP / edema | — | — | focal edema on imaging | diffuse edema, posturing, CN VI palsy, papilledema, Cushing's triad |
 
-So the signature is `gradeICANS(iceScore, { consciousness, seizure, motor, icp })`
-returning the max. At home we can realistically observe **ICE**, **level of
-consciousness**, and a caregiver-reported **seizure** flag — which is enough to
-reach grade 3. Tremors/myoclonus do **not** influence ICANS grade.
+**How this feeds the build:** don't write a `gradeICANS()` function — there is
+exactly one clinical function, `triage()`. What this table gives you is the
+*shape* of the neuro rule inside it: take the **worst** of the observable
+domains, never a single signal. At home we can realistically observe confusion
+and word-finding trouble, level of consciousness, and a caregiver-reported
+seizure — which is enough to reach the top tier. Tremors and myoclonus do
+**not** count toward neuro severity.
 
 Edge case worth encoding: ICE 0 is grade **3** if the patient is awake with
 global aphasia, but grade **4** if unarousable.
@@ -324,8 +327,10 @@ is a line that will land with clinicians and with Cody.
 | Diastolic BP | Observation | LOINC `8462-4` |
 | Heart rate | Observation | LOINC `8867-4` |
 | SpO₂ | Observation | LOINC `59408-5` |
-| ICE assessment | Questionnaire + QuestionnaireResponse | custom |
-| Computed CRS/ICANS grade | RiskAssessment | custom |
+| Symptom features from the voice check-in | Questionnaire + QuestionnaireResponse | custom |
+| Recent antipyretic/tocilizumab (boolean) | Observation | custom |
+| Computed triage tier | RiskAssessment | custom |
+| AI-drafted handover note | Communication | — |
 | Escalation | Flag + Task | — |
 | Day-0 infusion, care protocol | CarePlan | — |
 
@@ -385,7 +390,7 @@ shaky.** A polished Tier 1–3 beats a half-finished stretch goal every time.
     JSON only, never live XML parsing).
 11. Speech *latency* as a signal — Deepgram returns word-level timestamps, and
     slowed/hesitant speech is a real neurotoxicity sign. Genuinely novel and the
-    most Deepgram-native feature available. Tier 4 only — do not promise it in
+    most Deepgram-native feature available. Stretch only — do not promise it in
     the demo unless it's actually built.
 ### Explicitly NOT doing
 Auth beyond Medplum's built-in · live HealthKit/XML parsing · **Stedi and
@@ -408,18 +413,20 @@ thirty minutes hacking a mock claims API.
 
 **Green.** The environment is already built and verified (see RUNBOOK.md).
 Tier 1 is a few hours of Claude Code work. The genuinely uncertain part is
-Tier 2 — browser mic capture → Deepgram streaming → structured scoring. That's
+Tier 2 — browser mic capture → Deepgram → structured feature extraction. That's
 the one thing to spike *first thing* in the morning, before it's on the
 critical path.
 
 **Risks, ranked:**
-1. **Deepgram voice pipeline eats the day.** Mitigation: timebox to 90 min. If
-   it's not working by 12:30, fall back to typed ICE answers and keep Deepgram
-   for a single scripted voice moment in the demo. The Deepgram staff are *in
-   the room at 3pm for office hours* — go to them early, don't debug alone.
+1. **The voice pipeline eats the day.** Mitigation: timebox to 90 min. If live
+   streaming fights you, switch to recording a clip and sending it to Deepgram's
+   pre-recorded endpoint — identical on screen and far more reliable in a loud
+   room. If extraction itself is flaky, fall back to the structured question set
+   in §3. Deepgram staff hold office hours at 3pm — go early, don't debug alone.
 2. **Medplum Bot deployment is unfamiliar.** Mitigation: Tier 3 is third for a
-   reason. If Bots fight you, run the identical grading function client-side.
+   reason. If Bots fight you, run the identical `triage()` function client-side.
    The demo looks the same. Cody will notice, so mention it honestly if asked.
+   A `forbidden` error is an access-policy problem, not a code problem.
 3. **Demo fails live.** Mitigation: **record a 2-minute screen capture by
    4:30pm.** Non-negotiable. Present the recording, then go live if it's healthy.
 4. **You're a non-coder.** Mitigation: you drive Claude Code, and your real job

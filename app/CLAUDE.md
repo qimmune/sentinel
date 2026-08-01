@@ -15,7 +15,15 @@ FHIR) + React/Vite/Mantine + Deepgram (voice). One-day build, deadline 5:00pm.
 - Vite 8 + React 19 + TypeScript 6
 - `@medplum/core`, `@medplum/react`, `@medplum/fhirtypes` v5.1.27
 - Mantine 8 for UI (already wired — use Mantine components, don't add a UI lib)
+- **Vitest 4 is installed and working.** `npm test` (once) / `npm run test:watch`.
+  `vitest.config.ts` scopes runs to `src/` — do not widen it, or vitest follows
+  the `medplum-link` symlink and tries to run Medplum's ~870 test files.
+- `src/clinical/setup.test.ts` is a placeholder proving the harness runs.
+  Delete it once `triage.test.ts` exists.
 - `npm run dev` → http://localhost:3000
+- **Everything is already installed. Don't `npm install` unless something is
+  genuinely broken** — venue wifi may not cooperate, and `package-lock.json` is
+  gitignored by the starter. All dependency versions are exact-pinned.
 
 ## Non-negotiable design rules
 

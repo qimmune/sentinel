@@ -6,6 +6,9 @@
 - ✅ `npm install` clean, `npm run dev` serves HTTP 200 on http://localhost:3000
 - ✅ `vite.config.ts` patched to expose `DEEPGRAM_` env vars
 - ✅ `SPEC.md` (project + clinical logic + pitch) and `app/CLAUDE.md` (build contract)
+- ✅ **Vitest installed and verified** (`npm test`), scoped so it doesn't try to
+  run Medplum's ~870 test files. Tier 1 depends on tests, so this had to exist
+  before tomorrow — installing it on venue wifi would have been a bad morning.
 
 ## Also done — pulled from your Drive (`MedPlum x YC`)
 - ✅ **Deepgram API key** found and written to `app/.env` (verified git-ignored)
