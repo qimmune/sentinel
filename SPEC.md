@@ -11,10 +11,22 @@ CAR-T works. The problem is where it has to happen.
 
 Because of two toxicities — **CRS** (cytokine release syndrome) and **ICANS**
 (immune effector cell-associated neurotoxicity syndrome) — patients are
-admitted for 1–4 weeks after infusion. That inpatient requirement is the
-single biggest bottleneck on CAR-T access: it caps how many patients a center
-can treat, it drives most of the cost, and it forces patients to relocate to
-one of ~200 certified centers.
+admitted for weeks after infusion. That inpatient requirement is the single
+biggest bottleneck on CAR-T access: it caps how many patients a center can
+treat, and it forces patients to relocate to one of a few hundred certified
+centers.
+
+**The unit economics, with real numbers** (all sourced in §9):
+- Outpatient administration saved **~$40,000 per patient at 30 days and
+  ~$53,000 at 90 days** in a 99-patient real-world study.
+- Median hospital stay: **4–6.5 days outpatient vs 19 days inpatient.**
+- Most outpatient patients (86–93%) still get admitted at some point — **you
+  don't eliminate the admission, you shorten it.** Shortening it is entirely a
+  function of catching toxicity early, which is exactly what Sentinel does.
+
+This converts a large fixed inpatient cost into software-priced remote
+monitoring, reimbursable under RPM CPT codes (99453/99454/99457). For a
+risk-bearing provider or payer, that changes the unit economics of cell therapy.
 
 The field is already moving outpatient. What's missing is the monitoring
 layer. Today "outpatient CAR-T" means a nurse calls you, or you drive in daily
@@ -41,8 +53,12 @@ sensitively Sentinel watches them.** A patient flagged high-risk gets a lower
 escalation threshold — a symptom that's "call us tomorrow" for one patient is
 "come in now" for another.
 
-> **Predict who's at risk before infusion. Tune the monitoring to match. Catch
-> it early after.**
+And it compounds. **Every toxicity event Sentinel captures at home is labelled
+ground truth** — the exact outcome data needed to sharpen QMI's pre-infusion
+predictions. The monitoring product generates the training data the prediction
+product needs. Nobody else has both ends.
+
+> **Predict who's at risk. Tune the monitoring. Catch it early. Feed the model.**
 
 That's not a biotech founder doing a hackathon project. It's the same company
 closing the loop on the same failure mode from both ends — the
@@ -59,6 +75,7 @@ project ours rather than generic.)*
 | Judge / sponsor | What lands |
 |---|---|
 | **Cody Ebberson** (Medplum CTO) | Real FHIR modeling — Observation, Questionnaire/QuestionnaireResponse, RiskAssessment, Flag, Task, Subscription — plus a Medplum **Bot** running triage server-side. Not a CRUD demo with a FHIR logo on it. |
+| **The "yet another dashboard" objection** | The most common reason clinical software dies. Our answer is structural: because escalations are **native FHIR `Task` and `RiskAssessment` resources**, they're already in the format an EHR consumes. The on-call nurse doesn't log into our app — the Task lands in the worklist they already use. FHIR is the integration surface; SMART on FHIR is how it launches in-context. **A separate dashboard is a demo convenience, not the product.** |
 | **Deepgram** (2 of 6 judges) | Voice is the **input modality the problem demands** — sick patients describe symptoms in their own words, and neuro symptoms show up *in how someone speaks*. Voice isn't bolted on; it's the only way to capture this data at home. Best Deepgram fit in the room. |
 | **Diana Hu** (YC Partner) | Clear wedge, obvious buyer (CAR-T centers under capacity pressure), real market, founder has domain authority. |
 | **"Agentic healthcare" theme** | An agent that listens → extracts → decides → escalates, on a clinical protocol, with a human in the loop and a full audit trail. Exactly the theme. |
@@ -507,7 +524,11 @@ understand*, not what you built.
 > We're Q-Immune. Our platform reads protein networks in living cells to predict
 > which patients carry the most toxicity risk — before infusion. This is the
 > other half: it takes that prediction and decides how closely to watch them
-> after. Predict who's at risk, tune the monitoring, catch it early."
+> after.
+>
+> And every toxicity event this catches at home is labelled ground truth — the
+> exact data that makes the pre-infusion model sharper. We predict the risk, we
+> catch the complication, and we close the loop."
 
 ---
 
@@ -519,4 +540,6 @@ According to PubMed:
 - Majhail NS, et al. *Outpatient Administration of CAR T-Cell Therapy Using Remote Patient Monitoring.* JCO Oncol Pract. 2025. [DOI](https://doi.org/10.1200/OP-25-00062) — RPM scales outpatient programs cost-effectively across sites.
 - Moore SL, et al. *Using technology for patient-centered care at home after CAR T-cell therapy or stem cell transplant.* Front Immunol. 2025. [DOI](https://doi.org/10.3389/fimmu.2025.1403249) — 10 patients, wearables + SMS chatbot, 219 alerts, 26 needed care-team follow-up. Direct precedent — and notably *not* agentic.
 - Dholaria B, et al. *Feasibility of axicabtagene ciloleucel in the outpatient setting.* Bone Marrow Transplant. 2025. [DOI](https://doi.org/10.1038/s41409-025-02551-z) — 20 patients outpatient with remote monitoring; 19 still admitted for CRS. Use this to size the problem.
+- Janakiram M, et al. *HCRU and costs in patients administered cilta-cel in outpatient vs inpatient settings.* J Comp Eff Res. 2026. [DOI](https://doi.org/10.57264/cer-2026-0052) — **~$40,000 saved per patient at 30 days, ~$53,000 at 90 days**, 99 real-world patients. This is your economics number. *(Note: J&J/Legend-affiliated authors — fine to cite, know it if pushed.)*
+- Gregory T, et al. *Outpatient vs inpatient cilta-cel: systematic review.* Cancers. 2026. [DOI](https://doi.org/10.3390/cancers18050755) — **median stay 4–6.5 days outpatient vs 19 days inpatient**; 86–93% of outpatients still admitted. Use this for "you don't eliminate the admission, you shorten it."
 - Furqan F, et al. *Outpatient administration of CAR T-cell therapies using early CRS intervention.* Blood Adv. 2024. [DOI](https://doi.org/10.1182/bloodadvances.2024013239) — **early tocilizumab for grade ≥1 CRS prevented hospitalization in 15 of 35 patients.** This is the strongest number in your deck: catching grade 1 early keeps ~43% of patients out of the hospital. That is precisely what Sentinel automates.
