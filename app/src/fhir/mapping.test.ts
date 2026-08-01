@@ -16,7 +16,7 @@ import { buildCheckInResponse, getTranscript, toSymptomFeatures } from './checki
 import { buildSeedResources } from './seed';
 import { SEED_PATIENTS, currentVitals } from './seedData';
 import { generateVitalsStream } from './simulatedStream';
-import { buildVitalsObservations, isHeartRateTrendingUp, toVitals, toVitalsSeries } from './vitals';
+import { buildQuantityObservations, buildVitalsObservations, isHeartRateTrendingUp, toVitals, toVitalsSeries } from './vitals';
 
 const subject: Reference<Patient> = { reference: 'Patient/test' };
 
@@ -63,13 +63,38 @@ describe('vitals <-> Observations', () => {
   });
 
   it('detects a rising resting heart rate', () => {
-    const hr = (value: number): Observation =>
-      buildVitalsObservations(subject, { heartRate: value, antipyreticOrTociWithin6h: false }, new Date().toISOString())[0];
+    // Timestamps must be explicit and distinct. Stamping every reading with
+    // `new Date()` at construction time makes the test depend on whether the
+    // clock happens to tick mid-loop: toVitals() sorts by effectiveDateTime, so
+    // identical timestamps only preserve the intended order by accident.
+    const hr = (value: number, hoursAgo: number): Observation =>
+      buildQuantityObservations(
+        subject,
+        { heartRate: value },
+        new Date(Date.now() - hoursAgo * 3_600_000).toISOString()
+      )[0];
 
-    expect(isHeartRateTrendingUp([hr(104), hr(88), hr(84), hr(82)])).toBe(true);
-    expect(isHeartRateTrendingUp([hr(80), hr(78), hr(80), hr(79)])).toBe(false);
+    expect(isHeartRateTrendingUp([hr(104, 0), hr(88, 2), hr(84, 4), hr(82, 6)])).toBe(true);
+    expect(isHeartRateTrendingUp([hr(80, 0), hr(78, 2), hr(80, 4), hr(79, 6)])).toBe(false);
     // Not enough history to call a trend.
-    expect(isHeartRateTrendingUp([hr(110), hr(70)])).toBe(false);
+    expect(isHeartRateTrendingUp([hr(110, 0), hr(70, 2)])).toBe(false);
+  });
+
+  it('reads the latest heart rate regardless of the order it was handed', () => {
+    // The real guard: the same readings shuffled must give the same answer.
+    const hr = (value: number, hoursAgo: number): Observation =>
+      buildQuantityObservations(
+        subject,
+        { heartRate: value },
+        new Date(Date.now() - hoursAgo * 3_600_000).toISOString()
+      )[0];
+
+    const readings = [hr(104, 0), hr(88, 2), hr(84, 4), hr(82, 6)];
+
+    expect(isHeartRateTrendingUp(readings)).toBe(true);
+    expect(isHeartRateTrendingUp([...readings].reverse())).toBe(true);
+    expect(toVitals(readings).heartRate).toBe(104);
+    expect(toVitals([...readings].reverse()).heartRate).toBe(104);
   });
 });
 

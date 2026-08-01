@@ -237,7 +237,7 @@ export function CohortBoard(): JSX.Element {
       )}
 
       {error && (
-        <Alert mb="md" color="red" icon={<IconAlertTriangle size={16} />} title="Could not load the cohort">
+        <Alert mb="md" color="red" icon={<IconAlertTriangle size={16} />} title="Something went wrong">
           {error}
         </Alert>
       )}

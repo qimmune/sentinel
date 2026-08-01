@@ -73,8 +73,11 @@ export function tierFromRiskAssessment(assessment: RiskAssessment | undefined): 
 
 /** Is there already an open check-in request, so we don't ring twice? */
 async function hasOpenCheckInRequest(medplum: MedplumClient, patientId: string): Promise<boolean> {
+  // `patient`, not `for`. FHIR R4 defines Task.for's search parameters as
+  // `patient` (Task.for where it resolves to a Patient) and `subject`; there is
+  // no `for` parameter, and Medplum rejects it outright.
   const open = await medplum.searchResources('Task', {
-    'for': `Patient/${patientId}`,
+    patient: `Patient/${patientId}`,
     status: 'requested,in-progress',
     _count: 10,
   });
@@ -187,7 +190,7 @@ export async function runAgent(medplum: MedplumClient): Promise<AgentOutcome[]> 
 /** The open check-in request for a patient, if the agent has raised one. */
 export async function findCheckInRequest(medplum: MedplumClient, patientId: string): Promise<Task | undefined> {
   const tasks = await medplum.searchResources('Task', {
-    'for': `Patient/${patientId}`,
+    patient: `Patient/${patientId}`,
     status: 'requested',
     _count: 10,
   });
