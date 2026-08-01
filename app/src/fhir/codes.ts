@@ -41,3 +41,29 @@ export const SENTINEL_IDENTIFIER_SYSTEM = 'https://qimmune.com/fhir/sentinel-id'
 
 /** The voice check-in questionnaire. */
 export const SYMPTOM_QUESTIONNAIRE_URL = 'https://qimmune.com/fhir/Questionnaire/sentinel-symptom-checkin';
+
+// --- Tier 3: what the agent writes ---
+
+/** RiskAssessment method + the tier it concluded. */
+export const SENTINEL_TRIAGE_METHOD = 'sentinel-triage';
+
+/** Task.code values, so the app can tell the two kinds of Task apart. */
+export const SENTINEL_ESCALATION_REVIEW = 'escalation-review';
+export const SENTINEL_CHECK_IN_REQUEST = 'check-in-request';
+
+/** Flag.code for a Sentinel-raised escalation. */
+export const SENTINEL_ESCALATION_FLAG = 'sentinel-escalation';
+
+/** Communication.category for the auto-drafted handover note. */
+export const SENTINEL_HANDOVER_NOTE = 'handover-note';
+
+/**
+ * The clinician escalations land on — Cameron McCann, a real Practitioner in
+ * the Q-Immune project, so the demo shows work arriving on a named person
+ * rather than a placeholder.
+ *
+ * Hardcoded rather than read from `import.meta.env`: this module is bundled
+ * into the Medplum Bot, which runs in a Node sandbox where `import.meta.env`
+ * does not exist.
+ */
+export const ESCALATION_PRACTITIONER_ID = '202cc49d-e87e-43a7-b03d-53c938460ea2';

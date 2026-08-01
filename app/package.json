@@ -10,7 +10,8 @@
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:bot": "vite build --config vite.bot.config.ts"
   },
   "prettier": {
     "printWidth": 120,

@@ -16,13 +16,14 @@ import {
 } from '@mantine/core';
 import { normalizeErrorString } from '@medplum/core';
 import { useMedplum } from '@medplum/react';
-import { IconAlertTriangle, IconDatabasePlus, IconRefresh } from '@tabler/icons-react';
+import { IconAlertTriangle, IconBolt, IconDatabasePlus, IconRefresh } from '@tabler/icons-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { useNavigate } from 'react-router';
 import type { Vitals } from '../clinical/triage';
 import { FEVER_C, HYPOTENSION_SBP, HYPOXIA_SPO2, LOW_GRADE_TEMP_C } from '../clinical/thresholds';
 import { RISK_COLOR, ReasonList, TIER_COLOR, TIER_MEANING } from '../components/triageDisplay';
+import { runAgent, type AgentOutcome } from '../agent/agent';
 import { loadCohort, type CohortEntry } from '../fhir/cohort';
 import { seedDemoData } from '../fhir/seed';
 
@@ -133,6 +134,8 @@ export function CohortBoard(): JSX.Element {
   const [entries, setEntries] = useState<CohortEntry[]>();
   const [error, setError] = useState<string>();
   const [seeding, setSeeding] = useState<string>();
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [outcomes, setOutcomes] = useState<AgentOutcome[]>();
 
   const refresh = useCallback(async () => {
     setError(undefined);
@@ -159,6 +162,26 @@ export function CohortBoard(): JSX.Element {
       setSeeding(undefined);
     }
   }, [medplum, refresh]);
+
+  /**
+   * Run the agent over the cohort. This is the identical function the Medplum
+   * Bot runs — see src/bots/triageBot.ts. Only the trigger differs.
+   */
+  const runTheAgent = useCallback(async () => {
+    setAgentRunning(true);
+    setError(undefined);
+    try {
+      const results = await runAgent(medplum);
+      setOutcomes(results);
+      await refresh();
+    } catch (err) {
+      setError(normalizeErrorString(err));
+    } finally {
+      setAgentRunning(false);
+    }
+  }, [medplum, refresh]);
+
+  const acted = outcomes?.filter((outcome) => outcome.escalated || outcome.checkInRequested) ?? [];
 
   return (
     <Box p="lg">
@@ -187,6 +210,15 @@ export function CohortBoard(): JSX.Element {
             Refresh
           </Button>
           <Button
+            size="xs"
+            leftSection={<IconBolt size={14} />}
+            onClick={() => void runTheAgent()}
+            loading={agentRunning}
+            disabled={seeding !== undefined || !entries || entries.length === 0}
+          >
+            Run agent
+          </Button>
+          <Button
             variant="light"
             size="xs"
             leftSection={<IconDatabasePlus size={14} />}
@@ -207,6 +239,27 @@ export function CohortBoard(): JSX.Element {
       {error && (
         <Alert mb="md" color="red" icon={<IconAlertTriangle size={16} />} title="Could not load the cohort">
           {error}
+        </Alert>
+      )}
+
+      {outcomes && (
+        <Alert
+          mb="md"
+          color={acted.length > 0 ? 'orange' : 'gray'}
+          variant="light"
+          title={`Agent run complete — ${acted.length} of ${outcomes.length} patients needed action`}
+        >
+          <Stack gap={4}>
+            {outcomes.map((outcome) => (
+              <Text key={outcome.patientId} size="sm">
+                <strong>{outcome.name}</strong> {outcome.previousTier ?? 'new'} → {outcome.tier}
+                {outcome.escalated && ' · Flag + Task raised'}
+                {outcome.checkInRequested && ' · check-in requested'}
+                {outcome.drift.drifting &&
+                  ` · drifting (+${outcome.drift.tempRiseC?.toFixed(1)} °C, +${Math.round(outcome.drift.heartRateRiseBpm ?? 0)} bpm over ${outcome.drift.windowHours}h)`}
+              </Text>
+            ))}
+          </Stack>
         </Alert>
       )}
 

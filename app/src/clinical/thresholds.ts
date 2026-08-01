@@ -85,3 +85,15 @@ export const ICE_MAJOR_DEFICIT_AT = 4;
  * ignore.
  */
 export const ICE_ANY_DEFICIT_BELOW = ICE_ASSESSABLE_POINTS;
+
+/**
+ * Overnight drift — what makes the agent decide to call rather than wait for
+ * tomorrow's slot.
+ *
+ * All [PROXY]. ASTCT grades a snapshot; it says nothing about trends. These
+ * are tuned to fire on a genuine climb and stay quiet on normal circadian
+ * variation, which for temperature is roughly 0.5 °C across a day.
+ */
+export const DRIFT_WINDOW_HOURS = 8;
+export const DRIFT_TEMP_RISE_C = 0.6;
+export const DRIFT_HEART_RATE_RISE_BPM = 10;

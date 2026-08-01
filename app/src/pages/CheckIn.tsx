@@ -30,9 +30,12 @@ import {
 } from '@tabler/icons-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
+import type { Task } from '@medplum/fhirtypes';
 import { ICE_ASSESSABLE_POINTS } from '../clinical/thresholds';
 import { explainTriage, type TriageResult } from '../clinical/triage';
+import { IncomingCheckIn } from '../components/IncomingCheckIn';
 import { ReasonList, TIER_COLOR, TIER_MEANING } from '../components/triageDisplay';
+import { findCheckInRequest } from '../agent/agent';
 import { buildCheckInResponse } from '../fhir/checkin';
 import { SENTINEL_IDENTIFIER_SYSTEM } from '../fhir/codes';
 import { loadCohort, type CohortEntry } from '../fhir/cohort';
@@ -78,6 +81,9 @@ export function CheckIn(): JSX.Element {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const recorderRef = useRef<Recorder | undefined>(undefined);
+  /** The agent's off-schedule request, when it has raised one. */
+  const [incoming, setIncoming] = useState<Task>();
+  const [dismissed, setDismissed] = useState<string[]>([]);
 
   useEffect(() => {
     loadCohort(medplum)
@@ -89,6 +95,38 @@ export function CheckIn(): JSX.Element {
   }, [medplum]);
 
   useEffect(() => () => recorderRef.current?.cancel(), []);
+
+  /**
+   * Poll for the agent asking to speak to this patient.
+   *
+   * Polling rather than WebSocket subscriptions on purpose: five seconds is
+   * indistinguishable on stage and there is no socket lifecycle to go wrong in
+   * a room with bad wifi.
+   */
+  useEffect(() => {
+    if (!patientId || phase !== 'idle') {
+      return;
+    }
+    let cancelled = false;
+
+    const poll = async (): Promise<void> => {
+      try {
+        const task = await findCheckInRequest(medplum, patientId);
+        if (!cancelled && task && !dismissed.includes(task.id as string)) {
+          setIncoming(task);
+        }
+      } catch {
+        // A failed poll is not worth interrupting the patient for.
+      }
+    };
+
+    void poll();
+    const timer = setInterval(() => void poll(), 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [medplum, patientId, phase, dismissed]);
 
   const entry = cohort?.find((candidate) => candidate.patient.id === patientId);
   const step = RECORDED_STEPS[stepIndex];
@@ -204,10 +242,41 @@ export function CheckIn(): JSX.Element {
     }
   }, [answers, entry, extraction, medplum]);
 
+  /** The patient answered. Claim the Task and go straight into the questions. */
+  const acceptIncoming = useCallback(async () => {
+    const task = incoming;
+    setIncoming(undefined);
+    if (task?.id) {
+      try {
+        await medplum.updateResource({ ...task, status: 'in-progress' });
+      } catch {
+        // Losing the status update must not stop the check-in itself.
+      }
+    }
+    start();
+  }, [incoming, medplum, start]);
+
+  /** "Not now" — leave the Task open so the care team still sees it pending. */
+  const declineIncoming = useCallback(() => {
+    if (incoming?.id) {
+      setDismissed((current) => [...current, incoming.id as string]);
+    }
+    setIncoming(undefined);
+  }, [incoming]);
+
   const busy = phase === 'recording' || phase === 'transcribing' || phase === 'briefing';
 
   return (
     <Box p="lg">
+      {incoming && entry && (
+        <IncomingCheckIn
+          patientName={entry.name}
+          reason={incoming.description}
+          onAccept={() => void acceptIncoming()}
+          onDecline={declineIncoming}
+        />
+      )}
+
       <Title order={1} size="h2">
         Voice check-in
       </Title>

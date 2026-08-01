@@ -30,8 +30,10 @@ describe('computeGeometry', () => {
   });
 
   it('keeps every point inside the plot area', () => {
-    const { x, y } = geometry([36.9, 37.4, 38.4]);
+    // Build the series ONCE — calling points() twice reads Date.now() twice, so
+    // the geometry and the assertions would be scaled to different windows.
     const series = points([36.9, 37.4, 38.4]);
+    const { x, y } = computeGeometry(series, [], WIDTH, HEIGHT, MARGIN);
 
     for (const point of series) {
       expect(x(point.time)).toBeGreaterThanOrEqual(MARGIN.left);

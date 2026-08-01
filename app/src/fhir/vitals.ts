@@ -8,6 +8,7 @@
  */
 
 import type { Observation, Reference, Patient } from '@medplum/fhirtypes';
+import { DRIFT_HEART_RATE_RISE_BPM, DRIFT_TEMP_RISE_C, DRIFT_WINDOW_HOURS } from '../clinical/thresholds';
 import type { Vitals } from '../clinical/triage';
 import {
   LOINC,
@@ -229,5 +230,52 @@ export function toVitalsSeries(observations: Observation[]): VitalsSeries {
     systolic: seriesFor(observations, LOINC_SYSTOLIC_BP),
     diastolic: seriesFor(observations, LOINC_DIASTOLIC_BP),
     spo2: seriesFor(observations, LOINC_SPO2),
+  };
+}
+
+export interface DriftResult {
+  /** Both temperature and heart rate are climbing together. */
+  drifting: boolean;
+  tempRiseC?: number;
+  heartRateRiseBpm?: number;
+  windowHours: number;
+}
+
+/** The newest reading at least `hoursAgo` old — the baseline to compare against. */
+function readingBefore(points: VitalsPoint[], hoursAgo: number): VitalsPoint | undefined {
+  const cutoff = Date.now() - hoursAgo * 3_600_000;
+  return [...points].reverse().find((point) => new Date(point.time).getTime() <= cutoff);
+}
+
+/**
+ * Is this patient drifting overnight?
+ *
+ * Deliberately requires temperature AND heart rate to be climbing together.
+ * Either one alone moves for boring reasons — a warm room, a flight of stairs.
+ * Both together, sustained over hours, is the pattern worth waking someone for.
+ *
+ * @param observations - the patient's Observations, in any order
+ */
+export function detectVitalsDrift(observations: Observation[], windowHours = DRIFT_WINDOW_HOURS): DriftResult {
+  const series = toVitalsSeries(observations);
+
+  const measure = (points: VitalsPoint[]): number | undefined => {
+    const latest = points.at(-1);
+    const baseline = readingBefore(points, windowHours);
+    return latest && baseline ? latest.value - baseline.value : undefined;
+  };
+
+  const tempRiseC = measure(series.temperature);
+  const heartRateRiseBpm = measure(series.heartRate);
+
+  return {
+    drifting:
+      tempRiseC !== undefined &&
+      heartRateRiseBpm !== undefined &&
+      tempRiseC >= DRIFT_TEMP_RISE_C &&
+      heartRateRiseBpm >= DRIFT_HEART_RATE_RISE_BPM,
+    tempRiseC,
+    heartRateRiseBpm,
+    windowHours,
   };
 }
