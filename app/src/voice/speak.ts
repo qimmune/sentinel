@@ -73,6 +73,5 @@ export function preloadSpeech(lines: string[], apiKey: string): void {
   }
 }
 
-/** What the patient hears when they pick up. */
-export const CALL_GREETING =
-  'Hello, this is Sentinel calling from your care team. I have a few short questions about how you are feeling today.';
+/** Re-exported so UI code has one import for speech. Defined in the script. */
+export { CALL_GREETING } from './checkInScript';

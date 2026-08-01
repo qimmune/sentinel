@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:bot": "vite build --config vite.bot.config.ts"
+    "build:bot": "vite build --config vite.bot.config.ts",
+    "build:core": "vite build --config vite.core.config.ts",
+    "telephony": "node --env-file=server/.env server/index.mjs"
   },
   "prettier": {
     "printWidth": 120,

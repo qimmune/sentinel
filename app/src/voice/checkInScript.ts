@@ -100,5 +100,9 @@ export const CHECK_IN_SCRIPT: CheckInStep[] = [
   { id: 'ice-attention', kind: 'attention', points: 1, prompt: 'Starting at one hundred, count backwards by ten.' },
 ];
 
+/** What the patient hears when they pick up — in the app or on the phone. */
+export const CALL_GREETING =
+  'Hello, this is Sentinel calling from your care team. I have a few short questions about how you are feeling today.';
+
 /** The steps that actually record audio. */
 export const RECORDED_STEPS = CHECK_IN_SCRIPT.filter((step) => step.kind !== 'statement');

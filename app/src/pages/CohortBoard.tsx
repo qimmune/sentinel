@@ -136,6 +136,7 @@ export function CohortBoard(): JSX.Element {
   const [seeding, setSeeding] = useState<string>();
   const [agentRunning, setAgentRunning] = useState(false);
   const [outcomes, setOutcomes] = useState<AgentOutcome[]>();
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const refresh = useCallback(async () => {
     setError(undefined);
@@ -149,6 +150,24 @@ export function CohortBoard(): JSX.Element {
   useEffect(() => {
     refresh().catch((err: unknown) => setError(normalizeErrorString(err)));
   }, [refresh]);
+
+  /**
+   * Keep the board live. A phone call finishing on the server has to change
+   * this screen without anyone touching it — that is the whole point of the
+   * escalation landing in FHIR. Five seconds is invisible on stage and costs
+   * one search per patient.
+   */
+  useEffect(() => {
+    if (!autoRefresh) {
+      return;
+    }
+    const timer = setInterval(() => {
+      if (!seeding && !agentRunning) {
+        void refresh();
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [autoRefresh, refresh, seeding, agentRunning]);
 
   const seed = useCallback(async () => {
     setError(undefined);
@@ -200,15 +219,18 @@ export function CohortBoard(): JSX.Element {
           </Group>
         </Box>
         <Group gap="xs">
-          <Button
-            variant="default"
-            size="xs"
-            leftSection={<IconRefresh size={14} />}
-            onClick={() => void refresh()}
-            disabled={seeding !== undefined}
-          >
-            Refresh
-          </Button>
+          <Tooltip label={autoRefresh ? 'Live — polling every 5s' : 'Paused'}>
+            <Button
+              variant={autoRefresh ? 'light' : 'default'}
+              color={autoRefresh ? 'teal' : undefined}
+              size="xs"
+              leftSection={<IconRefresh size={14} />}
+              onClick={() => setAutoRefresh((on) => !on)}
+              disabled={seeding !== undefined}
+            >
+              {autoRefresh ? 'Live' : 'Paused'}
+            </Button>
+          </Tooltip>
           <Button
             size="xs"
             leftSection={<IconBolt size={14} />}

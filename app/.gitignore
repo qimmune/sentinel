@@ -27,3 +27,6 @@ package-lock.json
 # Local secrets - never commit
 .env
 .env.local
+
+# Telephony secrets
+server/.env
