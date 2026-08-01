@@ -58,10 +58,10 @@ project ours rather than generic.)*
 
 | Judge / sponsor | What lands |
 |---|---|
-| **Cody Ebberson** (Medplum CTO) | Real FHIR modeling — Observation, Questionnaire/QuestionnaireResponse, RiskAssessment, Flag, Task, Subscription — plus a Medplum **Bot** doing the grading server-side. Not a CRUD demo with a FHIR logo on it. |
-| **Deepgram** (2 of 6 judges) | The **ICE score is literally a spoken cognitive exam**. Voice isn't bolted on — it *is* the assessment. Best Deepgram fit in the room. |
+| **Cody Ebberson** (Medplum CTO) | Real FHIR modeling — Observation, Questionnaire/QuestionnaireResponse, RiskAssessment, Flag, Task, Subscription — plus a Medplum **Bot** running triage server-side. Not a CRUD demo with a FHIR logo on it. |
+| **Deepgram** (2 of 6 judges) | Voice is the **input modality the problem demands** — sick patients describe symptoms in their own words, and neuro symptoms show up *in how someone speaks*. Voice isn't bolted on; it's the only way to capture this data at home. Best Deepgram fit in the room. |
 | **Diana Hu** (YC Partner) | Clear wedge, obvious buyer (CAR-T centers under capacity pressure), real market, founder has domain authority. |
-| **"Agentic healthcare" theme** | An agent that observes → grades → decides → acts, on a clinical protocol, with a human in the loop. Exactly the theme. |
+| **"Agentic healthcare" theme** | An agent that listens → extracts → decides → escalates, on a clinical protocol, with a human in the loop and a full audit trail. Exactly the theme. |
 
 ---
 
@@ -154,7 +154,7 @@ Grade is then set by **the more severe of hypotension or hypoxia**.
 >
 > Outpatients take Tylenol at home. A naive grader that requires fever will
 > **silently downgrade a patient who just took an antipyretic** — the exact
-> patient you most need to catch. So `gradeCRS()` must take a
+> patient you most need to catch. So `triage()` must take an
 > `antipyreticOrTociWithin6h` flag and skip the fever gate when it's set.
 >
 > This is a genuine safety bug that most teams would ship. Call it out on
