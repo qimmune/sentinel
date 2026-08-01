@@ -127,6 +127,26 @@ Follow SPEC.md §8, straight through, in one take. Two minutes.
 - Speak slower than feels natural. Everyone rushes on camera.
 - End on the Q-Immune line. Don't trail off.
 
+### If the form asks for a code link
+
+Your repo is **local only — no GitHub remote.** If the submission form wants a
+repo URL, you'd be stuck at 4:45. `gh` is installed; sorting this takes 3 min:
+
+```bash
+gh auth login          # browser flow, do this once — tonight is ideal
+```
+
+Then tomorrow, whenever you want it public:
+
+```bash
+cd ~/qimmune-hackathon && gh repo create qimmune-sentinel --public --source=. --push
+```
+
+`.env` is gitignored, so your keys don't go up. **Double-check that** before
+pushing: `git ls-files | grep .env` should show only `.env.defaults`.
+
+A public repo is also worth having regardless — YC partners do look.
+
 ### Getting it submitted
 The `.mov` may be large. Fastest reliable path:
 1. Upload to Google Drive
