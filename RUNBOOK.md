@@ -83,10 +83,61 @@ Then at the venue:
 | 3:00 | Tier 3 — Medplum Bot + agent-triggered check-in + LLM handover note. Ask Medplum staff directly. |
 | 3:30 | **Stretch goals only if Tier 3 is done and committed.** Otherwise: polish. |
 | 4:00 | **Feature freeze.** Whatever works, works. |
-| 4:30 | **Record the 2-minute demo video.** Non-negotiable. |
+| 4:30 | **Record the 2-minute demo video.** Non-negotiable — see the section below. |
 | 4:45 | Submit the Google Form — don't wait until 4:59. |
 | 5:00 | Deadline. |
 | 5:00–6:00 | **Rehearse the demo out loud, 3× minimum.** This is the highest-ROI hour of the day. |
+
+## Recording the demo video (4:30pm — non-negotiable)
+
+**Do a 30-second test recording tonight.** Not tomorrow. The gotcha below only
+bites you once, and you don't want it to be at 4:30pm.
+
+### The tool
+`Cmd + Shift + 5` opens the built-in recorder.
+1. Click **Options** → under *Microphone*, pick your mic (built-in, or your
+   headset). **If you skip this, there is no audio at all.**
+2. Choose **Record Selected Portion** and drag a box around just the browser
+   window — full-screen recordings show your desktop clutter and menu bar.
+3. Click **Record**. Stop from the ■ in the menu bar, or `Cmd + Ctrl + Esc`.
+4. It saves to your **Desktop** as a `.mov`.
+
+### ⚠️ The gotcha that will break your video
+**macOS screen recording does NOT capture your computer's own audio.** It
+records the microphone only. So if Sentinel speaks through your speakers, or you
+play back the patient's voice clip, **none of it lands in the recording** — you
+get silence over your most important moment.
+
+Two ways to handle it, pick one tonight:
+
+- **Simplest (recommended): play the app's audio out loud through the laptop
+  speakers, and let the microphone pick it up.** Slightly echoey, completely
+  fine for a demo, zero setup. Do NOT wear headphones while recording — the mic
+  won't hear the app.
+- **Or: narrate everything yourself.** Don't rely on app audio at all. When the
+  voice check-in plays, say out loud what she's saying. Also fine, and you
+  control the pacing.
+
+Either way — **test it tonight and play it back with the volume up.**
+
+### What to record
+Follow SPEC.md §8, straight through, in one take. Two minutes.
+- Don't fix mistakes by starting over more than twice. A slightly rough take you
+  actually have beats a perfect one you ran out of time for.
+- Speak slower than feels natural. Everyone rushes on camera.
+- End on the Q-Immune line. Don't trail off.
+
+### Getting it submitted
+The `.mov` may be large. Fastest reliable path:
+1. Upload to Google Drive
+2. Right-click → Share → **Anyone with the link → Viewer**
+3. Paste that link into the submission form
+
+**Test the link in a private/incognito window before you submit.** A permission
+error on the judges' side is a silent zero. YouTube-unlisted works too if you'd
+rather.
+
+---
 
 ## How to work with Claude Code tomorrow
 
