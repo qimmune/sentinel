@@ -34,7 +34,7 @@ for a neuro exam.
 
 **Sentinel is the agent that watches the patient at home.** Every day it calls
 the patient, listens to how they describe their symptoms, combines that with
-their vitals and wearable data, and answers one question:
+their vitals, and answers one question:
 
 > **How worried should we be right now — and what should happen next?**
 
@@ -53,7 +53,7 @@ sensitively Sentinel watches them.** A patient flagged high-risk gets a lower
 escalation threshold — a symptom that's "call us tomorrow" for one patient is
 "come in now" for another.
 
-And it compounds. **Every toxicity event Sentinel captures at home is labelled
+It also compounds. **Every toxicity event Sentinel captures at home is labelled
 ground truth** — the exact outcome data needed to sharpen QMI's pre-infusion
 predictions. The monitoring product generates the training data the prediction
 product needs. Nobody else has both ends.
