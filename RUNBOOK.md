@@ -15,6 +15,10 @@
   fixing — SPEC.md §3 is now corrected and cites it. Full text saved offline to
   `reference/` so it works without venue wifi.
 
+> **Never used Medplum? Read [GUIDE.md](GUIDE.md) first — 10 minutes, plain
+> English.** It explains what Medplum and FHIR actually are, and how to check
+> Claude's work with your own eyes instead of taking "done" on faith.
+
 ## Tonight, before bed — 10 minutes
 
 ### Medplum sign-in
@@ -46,8 +50,9 @@ properly: **Project Admin → Clients → New Client**, redirect URI
 </details>
 
 Then:
-1. **Read SPEC.md §3 (clinical logic) and §8 (demo script).** You are the
-   domain expert on this team — that's your edge, not the code.
+1. **Read [GUIDE.md](GUIDE.md)** (10 min, plain English — what Medplum is, how
+   to verify work), then **SPEC.md §3 (clinical logic) and §8 (demo script).**
+   You are the domain expert on this team — that's your edge, not the code.
 2. **Skip the Apple Health export.** We're building on synthetic data. Real
    watch data is a stretch goal only — see SPEC.md §3b. Don't spend tonight on it.
 3. Charge laptop. Pack charger, **headphones with a mic** (you're demoing
